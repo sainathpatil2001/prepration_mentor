@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment History - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <h2 class="fw-bold mb-0">Payment History</h2>
+        <p class="text-muted small">View all your transactions and subscription purchases.</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'add_funds' %}" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="bi bi-credit-card me-2"></i>New Subscription
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-body p-0">
+        {% if transactions %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4 py-3">Transaction ID</th>
+                            <th>Date & Time</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for txn in transactions %}
+                        <tr class="transition-hover">
+                            <td class="ps-4 font-monospace small text-muted">
+                                #{{ txn.razorpay_order_id|default:txn.id|truncatechars:10 }}
+                            </td>
+                            <td class="text-muted small">
+                                {{ txn.created_at|date:"M d, Y" }}<br>
+                                {{ txn.created_at|date:"h:i A" }}
+                            </td>
+                            <td class="fw-medium text-dark">
+                                {% if txn.subscription_plan %}
+                                    {{ txn.subscription_plan.name }}
+                                {% else %}
+                                    {{ txn.transaction_type|title }}
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold">₹{{ txn.amount|floatformat:2 }}</td>
+                            <td>
+                                {% if txn.status == 'success' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Success</span>
+                                {% elif txn.status == 'pending' %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Pending</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Failed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <div class="mb-3 text-muted opacity-25">
+                    <i class="bi bi-receipt-cutoff fs-1"></i>
+                </div>
+                <h5 class="text-muted">No transactions found.</h5>
+                <a href="{% url 'add_funds' %}" class="btn btn-link text-decoration-none">View Pricing Plans</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}All Tests - Prepration Mentor{% endblock %}
+
+{% block container_class %}container-xl py-5{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Sidebar Filters -->
+    <div class="col-lg-3">
+        <div class="card border-0 shadow-sm sticky-top" style="top: 100px; z-index: 1020;">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Filters</h5>
+                    <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" id="clear-filters" style="font-size: 0.85rem; display: none;">Clear All</button>
+                </div>
+                
+                <!-- Search -->
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Search</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control bg-light border-start-0 ps-0" id="search-input" placeholder="Exam name, subject..." value="{{ query|default:'' }}">
+                    </div>
+                </div>
+
+                <!-- Month Filter -->
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Filter by Month</label>
+                    <input type="month" class="form-control bg-light" id="month-input" value="{{ month|default:'' }}">
+                </div>
+                
+                <!-- Categories -->
+                <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Categories</label>
+                            <div class="d-flex flex-column gap-2" id="category-filters">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="category" id="cat-all" value="" {% if not category and saved_filter != 'true' %}checked{% endif %}>
+                                    <label class="form-check-label w-100 cursor-pointer" for="cat-all">
+                                        All Categories
+                                    </label>
+                                </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="category" id="cat-saved" value="saved" {% if saved_filter == 'true' %}checked{% endif %}>
+                            <label class="form-check-label w-100 cursor-pointer" for="cat-saved">
+                                <i class="bi bi-bookmark-fill me-1 text-warning"></i> Saved Tests
+                            </label>
+                        </div>
+                        {% for cat in categories %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="category" id="cat-{{ cat.slug }}" value="{{ cat.slug }}" {% if category == cat.slug %}checked{% endif %}>
+                            <label class="form-check-label w-100 cursor-pointer" for="cat-{{ cat.slug }}">
+                                {{ cat.name }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Status (Visual only for now unless backend supports it, but good for UI) -->
+                <!-- 
+                <div class="mb-0">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Status</label>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="not_started">
+                            <label class="form-check-label">Not Started</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="in_progress">
+                            <label class="form-check-label">In Progress</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="completed">
+                            <label class="form-check-label">Completed</label>
+                        </div>
+                    </div>
+                </div>
+                -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+        <!-- Breadcrumbs & Header -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">All Tests</li>
+            </ol>
+            <div class="d-flex justify-content-between align-items-end">
+                <h2 class="fw-bold mb-0 text-dark">Explore Tests</h2>
+                <div class="d-none d-md-block text-muted small">
+                    Showing <span id="result-count">{{ tests.paginator.count }}</span> test(s)
+                </div>
+            </div>
+        </nav>
+
+        <!-- Test Grid -->
+        <div class="row g-4" id="test-list-container">
+            {% include 'accounts/_test_cards.html' %}
+        </div>
+        
+        <!-- Loading State -->
+        <div id="loading-spinner" class="text-center py-5 d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Pagination (Hidden when searching/filtering via AJAX usually, but kept for initial load) -->
+        <div id="pagination-container">
+            {% include 'accounts/_pagination.html' with tests=tests query=query category=category month=month saved=saved_filter %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-input');
+        const monthInput = document.getElementById('month-input');
+        const categoryFilters = document.getElementById('category-filters');
+        const container = document.getElementById('test-list-container');
+        const paginationContainer = document.getElementById('pagination-container');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const clearBtn = document.getElementById('clear-filters');
+        const resultCount = document.getElementById('result-count');
+        
+        let debounceTimer;
+
+        // Toggle clear button visibility
+        function updateClearButton() {
+            const hasSearch = searchInput.value.trim().length > 0;
+            const hasMonth = monthInput.value.length > 0;
+            const selectedCat = document.querySelector('input[name="category"]:checked').value;
+            
+            if (hasSearch || selectedCat || hasMonth) {
+                clearBtn.style.display = 'block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+        }
+
+        function fetchTests(page = 1) {
+            const searchInput = document.getElementById('search-input');
+            const query = searchInput.value.trim();
+            const selectedCatVal = document.querySelector('input[name="category"]:checked').value;
+            const month = monthInput.value;
+            
+            let category = selectedCatVal;
+            let saved = '';
+            
+            if (selectedCatVal === 'saved') {
+                category = '';
+                saved = 'true';
+            }
+            
+            // Show loading
+            container.style.opacity = '0.5';
+            loadingSpinner.classList.remove('d-none');
+            
+            // Update URL (optional, for shareability)
+            const url = new URL(window.location);
+            if (query) url.searchParams.set('q', query); else url.searchParams.delete('q');
+            
+            if (saved) {
+                url.searchParams.set('saved', 'true');
+                url.searchParams.delete('category');
+            } else {
+                url.searchParams.delete('saved');
+                if (category) url.searchParams.set('category', category); else url.searchParams.delete('category');
+            }
+            
+            if (month) url.searchParams.set('month', month); else url.searchParams.delete('month');
+            
+            // Handle page param in URL
+            if (page && page > 1) {
+                url.searchParams.set('page', page);
+            } else {
+                url.searchParams.delete('page');
+            }
+            
+            window.history.pushState({}, '', url);
+
+            // AJAX Call
+            fetch(`{% url 'search_tests' %}?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}&month=${encodeURIComponent(month)}&saved=${saved}&page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.html) {
+                        container.innerHTML = data.html;
+                        if (data.pagination_html) {
+                            paginationContainer.innerHTML = data.pagination_html;
+                            paginationContainer.style.display = 'block';
+                        } else {
+                            paginationContainer.innerHTML = '';
+                            paginationContainer.style.display = 'none';
+                        }
+                    }
+                    updateClearButton();
+                })
+                .catch(err => console.error('Error fetching tests:', err))
+                .finally(() => {
+                    container.style.opacity = '1';
+                    loadingSpinner.classList.add('d-none');
+                });
+        }
+
+        // Pagination Click Listener
+        paginationContainer.addEventListener('click', function(e) {
+            const link = e.target.closest('.page-link');
+            if (!link) return;
+            
+            // If it's a disabled link or active page, ignore
+            if (link.parentElement.classList.contains('disabled') || link.parentElement.classList.contains('active')) {
+                e.preventDefault();
+                return;
+            }
+
+            e.preventDefault();
+            
+            // Try to get page from data attribute first
+            let page = link.getAttribute('data-page');
+            
+            // Fallback: parse from href
+            if (!page) {
+                const href = link.getAttribute('href');
+                if (href) {
+                    const match = href.match(/page=(\d+)/);
+                    if (match) page = match[1];
+                }
+            }
+            
+            if (page) {
+                fetchTests(page);
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+
+        // Event Delegation for Save Buttons
+        container.addEventListener('click', function(e) {
+            const btn = e.target.closest('.save-test-btn');
+            if (!btn) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const testId = btn.getAttribute('data-test-id');
+            const icon = btn.querySelector('i');
+            
+            // Optimistic update
+            const isSaved = icon.classList.contains('bi-bookmark-fill');
+            
+            if (isSaved) {
+                icon.classList.remove('bi-bookmark-fill', 'text-warning');
+                icon.classList.add('bi-bookmark', 'text-muted');
+                btn.title = "Save for later";
+            } else {
+                icon.classList.remove('bi-bookmark', 'text-muted');
+                icon.classList.add('bi-bookmark-fill', 'text-warning');
+                btn.title = "Remove from saved";
+            }
+            
+            fetch(`/tests/${testId}/toggle-save/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Check if we are in "Saved Tests" view and just removed a test
+                    const isSavedFilterActive = document.getElementById('cat-saved').checked;
+                    if (isSaved && isSavedFilterActive) {
+                         // Remove the card from the UI smoothy
+                        const cardCol = btn.closest('.col-md-6');
+                        if (cardCol) {
+                            cardCol.style.transition = 'opacity 0.3s ease';
+                            cardCol.style.opacity = '0';
+                            setTimeout(() => cardCol.remove(), 300);
+                        }
+                    }
+                } else {
+                    // Revert if failed
+                    if (isSaved) {
+                        icon.classList.add('bi-bookmark-fill', 'text-warning');
+                        icon.classList.remove('bi-bookmark', 'text-muted');
+                        btn.title = "Remove from saved";
+                    } else {
+                        icon.classList.add('bi-bookmark', 'text-muted');
+                        icon.classList.remove('bi-bookmark-fill', 'text-warning');
+                        btn.title = "Save for later";
+                    }
+                    alert('Error saving test: ' + data.error);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                // Revert on error
+                 if (isSaved) {
+                        icon.classList.add('bi-bookmark-fill', 'text-warning');
+                        icon.classList.remove('bi-bookmark', 'text-muted');
+                        btn.title = "Remove from saved";
+                    } else {
+                        icon.classList.add('bi-bookmark', 'text-muted');
+                        icon.classList.remove('bi-bookmark-fill', 'text-warning');
+                        btn.title = "Save for later";
+                    }
+            });
+        });
+
+        // Search Input Listener (Debounced)
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => fetchTests(1), 300);
+            updateClearButton();
+        });
+
+        // Category Filter Listener
+        categoryFilters.addEventListener('change', function(e) {
+            if (e.target.name === 'category') {
+                fetchTests(1);
+            }
+        });
+
+        // Month Filter Listener
+        monthInput.addEventListener('change', () => fetchTests(1));
+
+        // Clear Filters
+        clearBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            monthInput.value = '';
+            document.getElementById('cat-all').checked = true;
+            fetchTests(1);
+        });
+        
+        // Initial check
+        updateClearButton();
+    });
+</script>
+{% endblock %}

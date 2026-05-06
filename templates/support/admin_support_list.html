@@ -1,0 +1,221 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Support Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Support Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'export_tickets' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-download me-1"></i> Export CSV
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="deleteSelectedBtn">
+                <i class="bi bi-trash me-1"></i> Delete Selected
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="q" class="form-control" placeholder="Search by Ticket ID, User, or Description" value="{{ query }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for code, label in category_choices %}
+                    <option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </div>
+                        </th>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Category</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% include 'support/_admin_ticket_rows.html' %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status_filter }}&category={{ category_filter }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}&q={{ query }}&status={{ status_filter }}&category={{ category_filter }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status_filter }}&category={{ category_filter }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ticketBody = document.querySelector('tbody');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const deleteBtn = document.getElementById('deleteSelectedBtn');
+        let refreshInterval;
+
+        // --- Polling Logic ---
+        function refreshTickets() {
+            // Get current URL and preserve query parameters
+            const currentUrl = window.location.href;
+            
+            fetch(currentUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.ok) return response.text();
+                throw new Error('Network response was not ok');
+            })
+            .then(html => {
+                ticketBody.innerHTML = html;
+                // Re-bind checkboxes after refresh
+                bindCheckboxEvents();
+                // Restore select all state if needed (or reset it)
+                if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            })
+            .catch(error => {
+                console.error('Error fetching tickets:', error);
+            });
+        }
+
+        refreshInterval = setInterval(refreshTickets, 10000);
+        window.addEventListener('beforeunload', () => clearInterval(refreshInterval));
+
+        // --- Bulk Action Logic ---
+        
+        function bindCheckboxEvents() {
+            const checkboxes = document.querySelectorAll('.ticket-checkbox');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateSelectAllState);
+            });
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.ticket-checkbox');
+                checkboxes.forEach(cb => cb.checked = this.checked);
+            });
+        }
+
+        function updateSelectAllState() {
+            const checkboxes = document.querySelectorAll('.ticket-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = allChecked && checkboxes.length > 0;
+                selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+            }
+        }
+
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function() {
+                const selectedCheckboxes = document.querySelectorAll('.ticket-checkbox:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+                if (selectedIds.length === 0) {
+                    alert('Please select at least one ticket to delete.');
+                    return;
+                }
+
+                // Custom confirmation flow
+                const userChoice = confirm(
+                    `You are about to delete ${selectedIds.length} ticket(s).\n\n` +
+                    `IMPORTANT: We strongly recommend exporting your data before deletion.\n\n` +
+                    `Click OK to DELETE immediately.\n` +
+                    `Click Cancel to stop.`
+                );
+
+                if (userChoice) {
+                    performDeletion(selectedIds);
+                }
+            });
+        }
+
+        function performDeletion(ids) {
+            const formData = new FormData();
+            ids.forEach(id => formData.append('ticket_ids[]', id));
+
+            fetch("{% url 'delete_tickets' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    // Force refresh immediately
+                    refreshTickets();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting tickets:', error);
+                alert('An error occurred while trying to delete tickets.');
+            });
+        }
+
+        // Initial bind
+        bindCheckboxEvents();
+    });
+</script>
+{% endblock %}

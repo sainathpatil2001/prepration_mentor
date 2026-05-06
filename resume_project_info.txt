@@ -1,0 +1,21 @@
+📝 Project Information Template
+
+Project Name: ExamPortal
+
+The "Elevator Pitch": A secure, web-based platform for creating, delivering, and grading timed examinations with integrated payments and real-time result analytics.
+
+The Tech Stack: Python, Django, Django REST Framework, SQLite, Razorpay API, Docker, HTML/CSS/JS.
+
+Key Features You Built:
+- Secure Exam Environment: Timed testing wrapper with single-session enforcement to prevent cheating.
+- Payment Integration: Seamless usage of Razorpay for unlocking premium exam content.
+- Automated Grading: Instant evaluation for objective questions and instructor interfaces for subjective reviews.
+- Support System & Custom Auth: Integrated ticketing system and custom Email OTP verification for secure access.
+
+The "Hardest Part" / Problem Solved:
+Implementing robust **Single Session Middleware** to enforce strict exam security. The challenge was to intercept requests and validate session tokens in real-time to ensure a user could only be active on one device at a time, effectively preventing account sharing during live exams.
+
+Impact/Metrics (If any):
+- Security: Enforced strict single-session policy, eliminating concurrent login attempts.
+- Scalability: decoupled REST API architecture facilitating future Android app integration.
+- Reliability: Deployed with Docker containerization for consistent runtime environments.

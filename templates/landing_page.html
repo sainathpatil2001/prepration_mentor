@@ -1,0 +1,864 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Prepration Mentor - Master Your Exams{% endblock %}
+
+{% block container_class %}container-fluid p-0{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Global Reset & Typography */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+        --text-dark: #2d3748;
+        --text-light: #718096;
+    }
+
+    body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        overflow-x: hidden;
+        background-color: #f8fafc;
+    }
+
+    /* Navbar Override */
+    .landing-nav {
+        background: rgba(255, 255, 255, 0.9) !important;
+        backdrop-filter: blur(10px);
+        padding: 1rem 0 !important;
+        position: fixed !important;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .nav-btn-login {
+        color: #4a5568;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        transition: color 0.2s;
+        text-decoration: none;
+    }
+    
+    .nav-btn-login:hover {
+        color: #2d3748;
+    }
+    
+    .nav-btn-signup {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 0.6rem 1.8rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 500;
+        box-shadow: 0 4px 14px 0 rgba(118, 75, 162, 0.39);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .nav-btn-signup:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px 0 rgba(118, 75, 162, 0.39);
+        color: white;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        padding-top: 60px; /* Reduced from 120px since navbar is removed/transparent */
+        min-height: 100vh;
+        background: radial-gradient(circle at top right, #f3f4f6 0%, #fff 100%);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Animated Background Blob */
+    .hero-blob {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: linear-gradient(180deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
+        filter: blur(80px);
+        border-radius: 50%;
+        animation: blobFloat 20s infinite alternate;
+        z-index: 0;
+    }
+
+    .blob-1 { top: -20%; right: -10%; }
+    .blob-2 { bottom: -10%; left: -10%; width: 500px; height: 500px; background: rgba(137, 247, 254, 0.2); }
+
+    @keyframes blobFloat {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(-30px, 30px) scale(1.1); }
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-title {
+        font-size: 4rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+        background: -webkit-linear-gradient(0deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -1px;
+    }
+
+    .hero-subtitle {
+        font-size: 1.35rem;
+        color: var(--text-light);
+        margin-bottom: 2.5rem;
+        line-height: 1.6;
+        max-width: 90%;
+    }
+
+    /* Hero Buttons */
+    .btn-hero {
+        padding: 1rem 2.5rem;
+        font-size: 1.15rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-primary-gradient {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px -5px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-outline-gradient {
+        background: white;
+        color: #764ba2;
+        border: 2px solid rgba(118, 75, 162, 0.1);
+        margin-left: 1rem;
+    }
+
+    .btn-outline-gradient:hover {
+        border-color: #764ba2;
+        background: rgba(118, 75, 162, 0.05);
+    }
+
+    /* 3D Dashboard Mockup */
+    .hero-visual {
+        position: relative;
+        perspective: 1500px;
+        transform-style: preserve-3d;
+    }
+
+    .dashboard-card-3d {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 
+            0 25px 50px -12px rgba(0, 0, 0, 0.25),
+            0 0 0 1px rgba(0, 0, 0, 0.05); /* Border effect */
+        padding: 4px; /* Inner border */
+        transform: rotateY(-10deg) rotateX(5deg);
+        transition: transform 0.5s ease-out;
+        position: relative;
+    }
+
+    .hero-visual:hover .dashboard-card-3d {
+        transform: rotateY(-2deg) rotateX(2deg);
+    }
+    
+    .screen-content {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #edf2f7;
+    }
+
+    /* Floating Stats Cards */
+    .floating-stat {
+        position: absolute;
+        background: white;
+        padding: 1rem 1.25rem;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        z-index: 10;
+        animation: floatY 6s ease-in-out infinite;
+    }
+    
+    .floating-stat i {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        font-size: 1.5rem;
+    }
+
+    .stat-1 {
+        top: 20px;
+        left: -40px;
+        animation-delay: 0s;
+    }
+    
+    .stat-2 {
+        bottom: 60px;
+        right: -30px;
+        animation-delay: 2s;
+    }
+
+    @keyframes floatY {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+    }
+
+    /* Features Section */
+    .features-section {
+        padding: 100px 0;
+        background: white;
+        position: relative;
+    }
+
+    .feature-card-hover {
+        padding: 2.5rem;
+        border-radius: 24px;
+        background: white;
+        border: 1px solid #f1f5f9;
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .feature-card-hover::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 0%;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        transition: height 0.4s ease;
+        z-index: -1;
+    }
+
+    .feature-card-hover:hover::before {
+        height: 100%;
+    }
+
+    .feature-card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+        border-color: transparent;
+    }
+
+    .feature-icon-wrapper {
+        width: 70px;
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 18px;
+        font-size: 1.75rem;
+        margin-bottom: 2rem;
+        background: #f8fafc;
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card-hover:hover .feature-icon-wrapper {
+        transform: scale(1.1) rotate(5deg);
+        background: white;
+    }
+
+    /* Stats Counter */
+    .stats-bar {
+        background: #1a202c;
+        padding: 5rem 0;
+        color: white;
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(to right, #89f7fe 0%, #66a6ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #a0aec0;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    /* Testimonials Section */
+    .testimonials-section {
+        padding: 100px 0;
+        background: #f8fafc;
+    }
+
+    .testimonial-card {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 24px;
+        margin-bottom: 20px; /* For spacing if stacked */
+        box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.03);
+        height: 100%;
+    }
+
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px -5px rgba(0,0,0,0.1);
+    }
+
+    .user-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 1rem;
+        border: 3px solid #fff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* FAQ Section */
+    .faq-section {
+        padding: 100px 0;
+        background: white;
+    }
+
+    .accordion-item {
+        border: none;
+        background: transparent;
+        margin-bottom: 1rem;
+    }
+
+    .accordion-button {
+        background: #f8fafc;
+        border-radius: 16px !important;
+        padding: 1.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background: white;
+        color: #764ba2;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+        border-color: #e2e8f0;
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: #764ba2;
+    }
+
+    .accordion-body {
+        padding: 1.5rem;
+        color: var(--text-light);
+        line-height: 1.7;
+    }
+
+    /* CTA Section */
+    .cta-wrapper {
+        background: var(--primary-gradient);
+        border-radius: 32px;
+        padding: 5rem 2rem;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+        color: white;
+        box-shadow: 0 20px 50px -10px rgba(118, 75, 162, 0.5);
+    }
+
+    .cta-blob {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+    .cta-blob-1 { width: 300px; height: 300px; top: -100px; left: -100px; }
+    .cta-blob-2 { width: 400px; height: 400px; bottom: -150px; right: -100px; }
+
+    /* Hide Default Navbar and Footer */
+    .navbar-custom, body > footer {
+        display: none !important;
+    }
+    
+    /* Remove default main margin since navbar is hidden */
+    main {
+        margin-top: 0 !important;
+    }
+
+    /* Dark Footer */
+    .footer-dark {
+        background: #0f172a;
+        color: #94a3b8;
+        padding-top: 80px;
+        font-size: 0.95rem;
+    }
+
+    .footer-brand-text {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: block;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .footer-title {
+        color: white;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        font-size: 1.1rem;
+    }
+
+    .footer-link {
+        color: #94a3b8;
+        text-decoration: none;
+        display: block;
+        margin-bottom: 0.75rem;
+        transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+        color: white;
+        transform: translateX(5px);
+    }
+
+    .social-link {
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.05);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: white;
+        margin-right: 10px;
+        transition: all 0.3s;
+    }
+
+    .social-link:hover {
+        background: var(--primary-gradient);
+        transform: translateY(-3px);
+    }
+
+    .footer-bottom {
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding: 2rem 0;
+        margin-top: 4rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Custom Navbar removed as requested -->
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <!-- Animated Blobs -->
+    <div class="hero-blob blob-1"></div>
+    <div class="hero-blob blob-2"></div>
+    
+    <div class="container hero-content">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <h1 class="hero-title" data-aos="fade-up">Master Your <br> Exam Preparation</h1>
+                <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    The ultimate AI-powered platform for competitive exams. 
+                    Practice smart, track progress effectively, and achieve your career goals.
+                </p>
+                <div class="d-flex flex-wrap gap-3" data-aos="fade-up" data-aos-delay="200">
+                    <a href="{% url 'account_signup' %}" class="btn-hero btn-primary-gradient">
+                        <i class="bi bi-lightning-charge-fill"></i> Get Started
+                    </a>
+                    <a href="{% url 'custom_login' %}" class="btn-hero btn-outline-gradient">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                    <a href="#features" class="btn-hero btn-secondary-subtle text-dark" style="background: rgba(0,0,0,0.05);">
+                         Watch Demo
+                    </a>
+                </div>
+                
+                <div class="mt-5 pt-4 d-flex align-items-center gap-5 border-top border-secondary-subtle">
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">500+</h4>
+                        <small class="text-muted">Mock Tests</small>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">10k+</h4>
+                        <small class="text-muted">Active Students</small>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">4.9</h4>
+                        <small class="text-muted">User Rating</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="hero-visual" data-aos="fade-left" data-aos-duration="1000">
+                    <div class="dashboard-card-3d">
+                        <div class="screen-content p-0">
+                            <!-- Header Mockup -->
+                            <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
+                                <div class="d-flex gap-2">
+                                    <div class="bg-danger rounded-circle" style="width: 10px; height: 10px;"></div>
+                                    <div class="bg-warning rounded-circle" style="width: 10px; height: 10px;"></div>
+                                    <div class="bg-success rounded-circle" style="width: 10px; height: 10px;"></div>
+                                </div>
+                                <div class="bg-white rounded px-3 py-1 text-muted small border">Dashboard Overview</div>
+                            </div>
+                            <!-- Body Mockup -->
+                            <div class="p-4 bg-white">
+                                <div class="row g-3">
+                                    <div class="col-8">
+                                        <div class="p-3 bg-primary-subtle rounded-3 mb-3">
+                                            <div class="h6 text-primary mb-1">Weekly Progress</div>
+                                            <div class="h3 fw-bold mb-0">85%</div>
+                                        </div>
+                                        <div class="p-3 bg-light rounded-3" style="height: 150px;">
+                                            <!-- Simple CSS Bar Chart -->
+                                            <div class="d-flex align-items-end justify-content-between h-100 px-2 pb-2">
+                                                <div class="bg-primary rounded-top" style="width: 15%; height: 40%; opacity: 0.5;"></div>
+                                                <div class="bg-primary rounded-top" style="width: 15%; height: 60%; opacity: 0.7;"></div>
+                                                <div class="bg-primary rounded-top" style="width: 15%; height: 50%; opacity: 0.6;"></div>
+                                                <div class="bg-primary rounded-top" style="width: 15%; height: 80%;"></div>
+                                                <div class="bg-primary rounded-top" style="width: 15%; height: 70%; opacity: 0.8;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="d-flex flex-column gap-3">
+                                            <div class="p-3 bg-warning-subtle rounded-3 text-center">
+                                                <i class="bi bi-clock-history fs-4 text-warning mb-2 d-block"></i>
+                                                <small class="fw-bold">Pending</small>
+                                            </div>
+                                            <div class="p-3 bg-success-subtle rounded-3 text-center">
+                                                <i class="bi bi-check-circle fs-4 text-success mb-2 d-block"></i>
+                                                <small class="fw-bold">Passed</small>
+                                            </div>
+                                            <div class="p-3 bg-danger-subtle rounded-3 text-center">
+                                                <i class="bi bi-exclamation-circle fs-4 text-danger mb-2 d-block"></i>
+                                                <small class="fw-bold">Missed</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating Stats -->
+                    <div class="floating-stat stat-1">
+                        <i class="bi bi-trophy-fill bg-warning text-white shadow-sm"></i>
+                        <div>
+                            <small class="text-muted d-block lh-1">Rank</small>
+                            <span class="fw-bold text-dark fs-5">Top 5%</span>
+                        </div>
+                    </div>
+
+                    <div class="floating-stat stat-2">
+                        <i class="bi bi-lightning-charge-fill bg-primary text-white shadow-sm"></i>
+                        <div>
+                            <small class="text-muted d-block lh-1">Speed</small>
+                            <span class="fw-bold text-dark fs-5">120 Q/hr</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features-section">
+    <div class="container">
+        <div class="text-center mb-5 pb-3" data-aos="fade-up">
+            <span class="badge bg-primary-subtle text-primary mb-3 px-3 py-2 rounded-pill fw-bold">FEATURES</span>
+            <h2 class="display-5 fw-bold mb-3 text-dark">Why Students Trust Us?</h2>
+            <p class="text-muted lead mx-auto" style="max-width: 600px;">
+                We provide a comprehensive ecosystem designed specifically for competitive exam aspirants.
+            </p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card-hover" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon-wrapper text-primary">
+                        <i class="bi bi-laptop"></i>
+                    </div>
+                    <h3 class="h4 fw-bold mb-3">Real Exam Interface</h3>
+                    <p class="text-muted mb-0">Practice on an interface that perfectly mimics the actual exam environment to calm your nerves on the big day.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card-hover" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon-wrapper text-purple" style="color: #764ba2;">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h3 class="h4 fw-bold mb-3">Smart Analytics</h3>
+                    <p class="text-muted mb-0">Our AI analyzes your performance to identify weak spots and suggests personalized improvement plans.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card-hover" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon-wrapper text-success" style="color: #10b981;">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </div>
+                    <h3 class="h4 fw-bold mb-3">Premium Content</h3>
+                    <p class="text-muted mb-0">Access thousands of questions curated by top educators and previous year toppers for maximum relevance.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Bar -->
+<section class="stats-bar">
+    <div class="container">
+        <div class="row text-center g-4">
+            <div class="col-md-4">
+                <div class="stat-number">5M+</div>
+                <div class="stat-label">Questions Attempted</div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-number">95%</div>
+                <div class="stat-label">Selection Rate</div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Expert Support</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-light text-dark mb-3 px-3 py-2 rounded-pill fw-bold border" style="color: #764ba2 !important; border-color: rgba(118, 75, 162, 0.2) !important;">WALL OF LOVE</span>
+            <h2 class="display-5 fw-bold text-dark">Loved by Students</h2>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="https://ui-avatars.com/api/?name=Sarah+L&background=random" alt="User" class="user-avatar">
+                        <div>
+                            <h5 class="fw-bold mb-0">Sarah L.</h5>
+                            <small class="text-muted">SSC Aspirant</small>
+                            <div class="text-warning small mt-1">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">"The mock tests are incredibly close to the actual exam pattern. It helped me identify my weak areas clearly."</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="https://ui-avatars.com/api/?name=Rahul+M&background=random" alt="User" class="user-avatar">
+                        <div>
+                            <h5 class="fw-bold mb-0">Rahul M.</h5>
+                            <small class="text-muted">Banking Exams</small>
+                            <div class="text-warning small mt-1">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">"The analytics dashboard is a game changer. Knowing my speed and accuracy in real-time boosted my confidence."</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="https://ui-avatars.com/api/?name=Priya+K&background=random" alt="User" class="user-avatar">
+                        <div>
+                            <h5 class="fw-bold mb-0">Priya K.</h5>
+                            <small class="text-muted">UPSC Aspirant</small>
+                            <div class="text-warning small mt-1">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">"Finally a platform that feels modern and fast. The question quality is top-notch and the explanations are detailed."</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="faq-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-5 mb-5 mb-lg-0" data-aos="fade-right">
+                <span class="badge bg-primary-subtle text-primary mb-3 px-3 py-2 rounded-pill fw-bold">SUPPORT</span>
+                <h2 class="display-5 fw-bold mb-4 text-dark">Frequently Asked Questions</h2>
+                <p class="text-muted lead mb-4">
+                    Have questions? We're here to help. If you don't find what you're looking for, contact our support team.
+                </p>
+                <a href="#" class="btn btn-outline-primary rounded-pill px-4 fw-bold">Contact Support</a>
+            </div>
+            <div class="col-lg-6 ms-auto" data-aos="fade-left">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                Is there a free trial?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Yes! You can try our platform for free with limited access to mock tests and analytics. No credit card required.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                Can I access tests on mobile?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Absolutely. Our platform is fully responsive and works seamlessly on smartphones and tablets.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                How often are questions updated?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                We update our question bank weekly to better reflect the latest exam patterns and trends.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="container py-5 mb-5">
+    <div class="cta-wrapper" data-aos="zoom-in">
+        <div class="cta-blob cta-blob-1"></div>
+        <div class="cta-blob cta-blob-2"></div>
+        <div class="position-relative z-1">
+            <h2 class="display-4 fw-bold mb-4">Ready to Start Your Journey?</h2>
+            <p class="lead mb-5 opacity-75" style="max-width: 700px; margin: 0 auto;">
+                Join thousands of students who are already mastering their exams with Prepration Mentor.
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'account_signup' %}" class="btn btn-light btn-lg rounded-pill px-5 fw-bold text-primary shadow-lg">Get Started Now</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer-dark">
+    <div class="container">
+        <div class="row gy-5">
+            <div class="col-lg-4 col-md-6">
+                <a href="#" class="footer-brand-text">Prepration Mentor</a>
+                <p class="mb-4">
+                    The ultimate platform for competitive exam preparation. We combine AI-driven analytics with premium content to help you succeed.
+                </p>
+                <div class="d-flex mb-4">
+                    <a href="#" class="social-link"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="social-link"><i class="bi bi-twitter"></i></a>
+                    <a href="#" class="social-link"><i class="bi bi-instagram"></i></a>
+                    <a href="#" class="social-link"><i class="bi bi-linkedin"></i></a>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-6">
+                <h5 class="footer-title">Quick Links</h5>
+                <a href="{% url 'home' %}" class="footer-link">Home</a>
+                <a href="#features" class="footer-link">Features</a>
+                <a href="{% url 'account_signup' %}" class="footer-link">Sign Up</a>
+                <a href="{% url 'custom_login' %}" class="footer-link">Login</a>
+            </div>
+            
+            <div class="col-lg-2 col-md-6">
+                <h5 class="footer-title">Support</h5>
+                <a href="{% url 'contact_us' %}" class="footer-link">Help Center</a>
+                <a href="{% url 'contact_us' %}" class="footer-link">Contact Us</a>
+                <a href="{% url 'privacy_policy' %}" class="footer-link">Privacy Policy</a>
+                <a href="{% url 'terms_of_service' %}" class="footer-link">Terms of Service</a>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <h5 class="footer-title">Contact Us</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-3 d-flex gap-3">
+                        <i class="bi bi-geo-alt-fill text-primary"></i>
+                        <span>123 Education Lane, Tech City, <br>India 400001</span>
+                    </li>
+                    <li class="mb-3 d-flex gap-3">
+                        <i class="bi bi-envelope-fill text-primary"></i>
+                        <span>support@preprationmentor.com</span>
+                    </li>
+                    <li class="mb-3 d-flex gap-3">
+                        <i class="bi bi-telephone-fill text-primary"></i>
+                        <span>+91 98765 43210</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <p class="mb-0">&copy; 2024 Prepration Mentor. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a href="{% url 'admin_login' %}" class="text-secondary small text-decoration-none opacity-50 hover-white">Admin Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<style>
+/* Hide default base navbar/footer if they exist, to use our custom one or rely on blocks */
+/* Actually, base.html footer is fine, but we might want to hide the navbar if it auto-shows */
+</style>
+
+{% endblock %}

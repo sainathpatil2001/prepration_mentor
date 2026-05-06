@@ -1,0 +1,171 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}System Backup & Restore - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-8">
+        <h2><i class="bi bi-hdd-network"></i> System Backup & Restore</h2>
+        <p class="text-muted">Manage your database backups and restore mechanisms.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Backup Section -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <h5 class="text-primary"><i class="bi bi-cloud-download"></i> Create Backup</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-muted">
+                    Download a full backup of your database in JSON format. This file includes all users, tests, questions, and system configuration data.
+                </p>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Regular backups are recommended to prevent data loss.
+                </div>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="backup">
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="bi bi-download me-2"></i> Download Full Backup
+                    </button>
+                    <!-- Small checkboxes for advanced options could go here if needed -->
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Section -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <h5 class="text-danger"><i class="bi bi-cloud-upload"></i> Restore Data</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-muted">
+                    Upload a backup file to restore system data. 
+                    <br>
+                    <strong>Note:</strong> This checks for duplicates and updates existing records.
+                </p>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i> <strong>Warning:</strong> Use with caution. Ensure the file is a valid backup generated from this system.
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="restore">
+                    
+                    <div class="mb-3">
+                        <label for="backup_file" class="form-label">Select Backup File (.json)</label>
+                        <input type="file" class="form-control" id="backup_file" name="backup_file" accept=".json" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger w-100 py-2" onclick="return confirm('Are you sure you want to restore data from this file? This action may modify existing data.')">
+                        <i class="bi bi-upload me-2"></i> Upload & Restore
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-database"></i> Stored Backups</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Filename</th>
+                                <th>Size</th>
+                                <th>Created By</th>
+                                <th>Created At</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in stored_backups %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-file-zip text-warning"></i> {{ backup.name }}
+                                </td>
+                                <td>{{ backup.size_bytes|filesizeformat }}</td>
+                                <td>{{ backup.created_by.username|default:"System" }}</td>
+                                <td>{{ backup.created_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if backup.file %}
+                                    <a href="{{ backup.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">File missing</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted">No stored backups found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Recent Activity Logs</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Action</th>
+                                <th>Admin User</th>
+                                <th>Details</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_logs %}
+                            <tr>
+                                <td>
+                                    {% if 'Backup' in log.message %}
+                                        <span class="badge bg-success">Backup</span>
+                                    {% elif 'Restor' in log.message %}
+                                        <span class="badge bg-warning text-dark">Restore</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ log.action }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.admin_user.username }}</td>
+                                <td>{{ log.message }}</td>
+                                <td>{{ log.created_at|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3 text-muted">No recent activity logs found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

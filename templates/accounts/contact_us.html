@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact Us - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row align-items-center mb-5">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <h1 class="display-4 fw-bold mb-3">Get in Touch</h1>
+            <p class="lead text-muted">We'd love to hear from you. Have a question, suggestion, or just want to say hi?</p>
+            
+            <div class="mt-5">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="bg-primary-subtle rounded-circle p-3 me-3 text-primary">
+                        <i class="bi bi-geo-alt-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-1">Our Location</h5>
+                        <p class="text-muted mb-0">123 Education Lane, Tech City, India</p>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center mb-4">
+                    <div class="bg-success-subtle rounded-circle p-3 me-3 text-success">
+                        <i class="bi bi-envelope-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-1">Email Us</h5>
+                        <p class="text-muted mb-0">support@preprationmentor.com</p>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    <div class="bg-warning-subtle rounded-circle p-3 me-3 text-warning">
+                        <i class="bi bi-telephone-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-1">Call Us</h5>
+                        <p class="text-muted mb-0">+91 98765 43210</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-5 ms-auto">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body p-5">
+                    <h3 class="fw-bold mb-4">Send a Message</h3>
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold small text-uppercase text-muted">Full Name</label>
+                            <input type="text" class="form-control form-control-lg bg-light border-0" id="name" name="name" placeholder="John Doe" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-bold small text-uppercase text-muted">Email Address</label>
+                            <input type="email" class="form-control form-control-lg bg-light border-0" id="email" name="email" placeholder="john@example.com" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="message" class="form-label fw-bold small text-uppercase text-muted">Message</label>
+                            <textarea class="form-control form-control-lg bg-light border-0" id="message" name="message" rows="4" placeholder="How can we help you?" required></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold py-3 rounded-pill shadow-sm hover-elevate">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<section class="bg-dark text-white py-5 rounded-4 mx-3 mb-5 overflow-hidden position-relative">
+    <div class="container text-center position-relative z-1">
+        <h2 class="fw-bold mb-3">Ready to Excel in Your Exams?</h2>
+        <p class="lead text-white-50 mb-4">Join thousands of students who trust Prepration Mentor for their success.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'account_signup' %}" class="btn btn-light btn-lg rounded-pill px-5 fw-bold text-primary">Sign Up Now</a>
+            <a href="{% url 'custom_login' %}" class="btn btn-outline-light btn-lg rounded-pill px-5">Login</a>
+        </div>
+    </div>
+    <!-- Background blob -->
+    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: radial-gradient(circle at 10% 20%, rgba(102, 126, 234, 0.2) 0%, transparent 50%); pointer-events: none;"></div>
+</section>
+{% endblock %}

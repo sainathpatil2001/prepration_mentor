@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Exam Results - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mb-5" data-aos="fade-up">
+    <div class="col-lg-8 text-center">
+        {% if attempt.is_passed %}
+            <div class="mb-4">
+                <i class="bi bi-trophy-fill text-warning display-1 drop-shadow"></i>
+            </div>
+            <h1 class="fw-bold text-success mb-3">Congratulations!</h1>
+            <p class="lead text-muted">You have successfully passed the <strong>{{ attempt.test.title }}</strong>.</p>
+        {% else %}
+            <div class="mb-4">
+                <i class="bi bi-emoji-frown text-muted display-1"></i>
+            </div>
+            <h1 class="fw-bold text-danger mb-3">Keep Practicing!</h1>
+            <p class="lead text-muted">You did not meet the passing criteria for <strong>{{ attempt.test.title }}</strong>.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Score Overview -->
+<div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden bg-white" data-aos="fade-up" data-aos-delay="100">
+    <div class="card-body p-0">
+        <div class="row g-0 align-items-center">
+            <div class="col-md-6 col-lg-3 p-4 text-center border-end-md border-bottom border-bottom-md-0">
+                <span class="d-block text-muted small text-uppercase fw-bold mb-2 tracking-wide">Your Score</span>
+                <div class="d-flex align-items-baseline justify-content-center">
+                    <span class="display-5 fw-bold text-primary mb-0">{{ attempt.score }}</span>
+                    <span class="text-muted ms-1 fs-5">/ {{ attempt.total_marks }}</span>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 p-4 text-center border-end-lg border-bottom border-bottom-lg-0">
+                <span class="d-block text-muted small text-uppercase fw-bold mb-2 tracking-wide">Percentage</span>
+                <div class="d-flex align-items-baseline justify-content-center">
+                    <span class="display-5 fw-bold {% if attempt.is_passed %}text-success{% else %}text-danger{% endif %} mb-0">
+                        {{ attempt.percentage|floatformat:1 }}<span class="fs-4">%</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 p-4 text-center border-end-md border-bottom border-bottom-md-0">
+                <span class="d-block text-muted small text-uppercase fw-bold mb-2 tracking-wide">Time Taken</span>
+                <div class="d-flex align-items-baseline justify-content-center">
+                    <span class="display-5 fw-bold text-dark mb-0">{{ attempt.time_taken_minutes }}</span>
+                    <span class="text-muted ms-1 fs-5">min</span>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3 p-4 text-center bg-light">
+                <span class="d-block text-muted small text-uppercase fw-bold mb-2 tracking-wide">Result Status</span>
+                <div>
+                     {% if attempt.is_passed %}
+                        <span class="badge bg-success rounded-pill px-4 py-2 fs-6 shadow-sm">PASS</span>
+                    {% else %}
+                        <span class="badge bg-danger rounded-pill px-4 py-2 fs-6 shadow-sm">FAIL</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Actions -->
+    <div class="card-footer bg-white p-3 border-top border-light">
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'test_list' %}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                <i class="bi bi-arrow-repeat me-2"></i>Retake / New Test
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                <i class="bi bi-house-door-fill me-2"></i>Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Analysis & Navigation -->
+<div class="row g-4" data-aos="fade-up" data-aos-delay="200">
+    
+    <!-- Top Bar: Question Navigator -->
+    <div class="col-12">
+        <div class="sticky-top" style="top: 2rem; z-index: 10;">
+            <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
+                <div class="card-header bg-primary text-white fw-bold py-3 border-bottom-0 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                        <span>Navigator</span>
+                        <span class="badge bg-white text-primary rounded-pill ms-2">{{ questions_data|length }} Qs</span>
+                    </div>
+                    
+                    <!-- Stats in Header (Horizontal Layout) -->
+                    <div class="d-none d-md-flex align-items-center gap-4 text-white small">
+                         <div class="d-flex align-items-center">
+                            <i class="bi bi-circle-fill text-success small me-1"></i>
+                            <span>Correct: <strong>{{ correct_count }}</strong></span>
+                         </div>
+                         <div class="d-flex align-items-center">
+                            <i class="bi bi-circle-fill text-danger small me-1"></i>
+                            <span>Wrong: <strong>{{ wrong_count }}</strong></span>
+                         </div>
+                         <div class="d-flex align-items-center">
+                            <i class="bi bi-circle-fill text-white-50 small me-1"></i>
+                            <span>Skipped: <strong>{{ skipped_count }}</strong></span>
+                         </div>
+                    </div>
+                </div>
+                
+                
+                <div class="card-body p-3 pt-3">
+                    <!-- Filters -->
+                    <div class="d-flex gap-2 mb-3 overflow-auto pb-2" style="white-space: nowrap;">
+                        <button class="btn btn-sm btn-dark active rounded-pill px-3" onclick="filterQuestions('all', this)">All</button>
+                        <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="filterQuestions('correct', this)">Correct</button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="filterQuestions('wrong', this)">Wrong</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="filterQuestions('skipped', this)">Skipped</button>
+                        <button class="btn btn-sm btn-outline-warning text-dark rounded-pill px-3" onclick="filterQuestions('marked', this)">
+                            <i class="bi bi-bookmark-fill me-1"></i>Saved for Later
+                        </button>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 justify-content-start" id="question-navigator-grid">
+                        {% for item in questions_data %}
+                            <a href="#q-review-{{ forloop.counter }}" 
+                            <a href="#q-review-{{ forloop.counter }}" 
+                               class="btn btn-sm fw-bold shadow-sm position-relative transition-all nav-item-btn
+                               {% if item.user_answer.is_correct %}btn-success{% elif not item.user_answer.selected_answer %}btn-secondary{% else %}btn-danger{% endif %}"
+                               data-status="{% if item.user_answer.is_correct %}correct{% elif not item.user_answer.selected_answer %}skipped{% else %}wrong{% endif %}"
+                               data-marked="{% if item.user_answer.is_marked_for_review %}true{% else %}false{% endif %}"
+                               style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 0.9rem;"
+                               title="Q{{ forloop.counter }}: {% if item.user_answer.is_correct %}Correct{% elif not item.user_answer.selected_answer %}Skipped{% else %}Incorrect{% endif %}">
+                                {{ forloop.counter }}
+                                {% if item.user_answer.is_marked_for_review %}
+                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle" style="width: 10px; height: 10px;">
+                                    <span class="visually-hidden">Marked</span>
+                                </span>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Stats specific for mobile (Vertical layout if needed, but horizontal usually fits) -->
+                    <div class="d-md-none mt-3 border-top pt-2">
+                         <div class="d-flex justify-content-between small text-muted">
+                            <div><i class="bi bi-circle-fill text-success me-1"></i>Avg: {{ correct_count }}</div>
+                            <div><i class="bi bi-circle-fill text-danger me-1"></i>Wrg: {{ wrong_count }}</div>
+                            <div><i class="bi bi-circle-fill text-secondary me-1"></i>Skp: {{ skipped_count }}</div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content: Solutions -->
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+            <h4 class="fw-bold m-0 text-primary">Detailed Solutions</h4>
+            <span class="text-muted small">Review your answers and explanations</span>
+        </div>
+        
+        {% for item in questions_data %}
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden scroll-mt-20 rounded-4 
+             {% if item.user_answer.is_correct %}border-start border-success border-5{% elif not item.user_answer.selected_answer %}border-start border-secondary border-5{% else %}border-start border-danger border-5{% endif %}" 
+             id="q-review-{{ forloop.counter }}" 
+             style="scroll-margin-top: 180px;"> <!-- Increased scroll margin for sticky header -->
+             
+            <div class="card-header bg-white border-bottom p-4 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <span class="badge rounded-circle bg-light text-dark border me-3 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">{{ forloop.counter }}</span>
+                    <span class="fw-bold text-dark h5 mb-0">Question</span>
+                </div>
+                <div>
+                    {% if item.user_answer.is_correct %}
+                        <span class="badge bg-success text-white rounded-pill px-3 py-2"><i class="bi bi-check-circle-fill me-2"></i>Correct</span>
+                    {% elif not item.user_answer.selected_answer %}
+                        <span class="badge bg-secondary text-white rounded-pill px-3 py-2"><i class="bi bi-dash-circle me-2"></i>Skipped</span>
+                    {% else %}
+                        <span class="badge bg-danger text-white rounded-pill px-3 py-2"><i class="bi bi-x-circle-fill me-2"></i>Incorrect</span>
+                    {% endif %}
+                    
+                    {% if item.user_answer.is_marked_for_review %}
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 ms-2"><i class="bi bi-bookmark-fill me-2"></i>Saved for Later</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <div class="fs-5 fw-medium text-dark mb-3">
+                        {% if item.question.question_text %}
+                            {{ item.question.question_text|linebreaks }}
+                        {% endif %}
+                    </div>
+                    {% if item.question.question_image %}
+                    <img src="{{ item.question.question_image.url }}" class="img-fluid rounded border shadow-sm" style="max-height: 400px;">
+                    {% endif %}
+                </div>
+                
+                <h6 class="text-muted text-uppercase small fw-bold mb-3">Options</h6>
+                
+                <div class="d-flex flex-column gap-2 mb-4">
+                    {% for answer in item.question.answers.all %}
+                        {% with is_selected=False is_correct=answer.is_correct %}
+                            <!-- Logic to check if this answer ID matches selected answer ID -->
+                            {% if item.user_answer.selected_answer and item.user_answer.selected_answer.id == answer.id %}
+                                <!-- This is the user's selection -->
+                                <div class="p-3 rounded border position-relative 
+                                    {% if is_correct %}bg-success-subtle border-success{% else %}bg-danger-subtle border-danger{% endif %}">
+                                    <div class="d-flex align-items-start">
+                                        <div class="me-3 mt-1">
+                                            {% if is_correct %}
+                                                <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                                            {% else %}
+                                                <i class="bi bi-x-circle-fill text-danger fs-4"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="{% if is_correct %}text-success-emphasis{% else %}text-danger-emphasis{% endif %}">
+                                                {{ answer.answer_text }}
+                                            </div>
+                                            {% if answer.answer_image %}
+                                                <div class="mt-2">
+                                                    <img src="{{ answer.answer_image.url }}" class="rounded border" style="max-height: 100px;">
+                                                </div>
+                                            {% endif %}
+                                            <div class="mt-2 text-uppercase fw-bold small">
+                                                <span class="badge {% if is_correct %}bg-success{% else %}bg-danger{% endif %}">Your Answer</span>
+                                                {% if is_correct %}
+                                                    <span class="badge bg-success ms-1"><i class="bi bi-check-lg"></i> Correct</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% elif is_correct %}
+                                <!-- This is the correct answer but NOT selected (User skipped or wrong) -->
+                                <div class="p-3 rounded border bg-success-subtle border-success">
+                                    <div class="d-flex align-items-start">
+                                        <div class="me-3 mt-1">
+                                            <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="text-success-emphasis text-decoration-none">
+                                                {{ answer.answer_text }}
+                                            </div>
+                                            {% if answer.answer_image %}
+                                                <div class="mt-2">
+                                                    <img src="{{ answer.answer_image.url }}" class="rounded border" style="max-height: 100px;">
+                                                </div>
+                                            {% endif %}
+                                            <div class="mt-2 text-uppercase fw-bold small">
+                                                <span class="badge bg-success">Correct Answer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <!-- Neutral Option -->
+                                <div class="p-3 rounded border bg-light border-light-subtle">
+                                    <div class="d-flex align-items-start">
+                                        <div class="me-3 mt-1">
+                                            <i class="bi bi-circle text-muted fs-4"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="text-secondary">
+                                                {{ answer.answer_text }}
+                                            </div>
+                                            {% if answer.answer_image %}
+                                                <div class="mt-2">
+                                                    <img src="{{ answer.answer_image.url }}" class="rounded border opacity-75" style="max-height: 100px;">
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+                
+                {% if item.question.explanation or item.question.explanation_image %}
+                <div class="mt-3 p-4 bg-primary-subtle rounded-4 border border-primary-subtle">
+                    <h6 class="fw-bold text-primary mb-2"><i class="bi bi-lightbulb-fill me-2"></i>Explanation</h6>
+                    {% if item.question.explanation %}
+                        <p class="mb-0 text-dark opacity-75">{{ item.question.explanation|linebreaks }}</p>
+                    {% endif %}
+                    {% if item.question.explanation_image %}
+                        <img src="{{ item.question.explanation_image.url }}" class="img-fluid rounded border mt-3" style="max-height: 300px;">
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .drop-shadow {
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    }
+    .divide-y-md > * + * {
+        border-top: 1px solid #e2e8f0;
+    }
+    @media (min-width: 768px) {
+        .divide-y-md > * + * {
+            border-top: 0;
+            border-left: 1px solid #e2e8f0;
+        }
+        .border-start-md {
+            border-left: 1px solid #e2e8f0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterQuestions(type, btn) {
+        // Update active button state
+        document.querySelectorAll('.btn-group button, .d-flex button').forEach(b => {
+             b.classList.remove('btn-dark', 'active');
+             if (b.classList.contains('btn-outline-success')) b.classList.add('btn-outline-success');
+             if (b.classList.contains('btn-outline-danger')) b.classList.add('btn-outline-danger');
+             if (b.classList.contains('btn-outline-secondary')) b.classList.add('btn-outline-secondary');
+             if (b.classList.contains('btn-outline-warning')) b.classList.add('btn-outline-warning');
+        });
+        
+        btn.classList.remove('btn-outline-success', 'btn-outline-danger', 'btn-outline-secondary', 'btn-outline-warning');
+        btn.classList.add('btn-dark', 'active');
+
+        const items = document.querySelectorAll('.nav-item-btn');
+        
+        items.forEach(item => {
+            const status = item.getAttribute('data-status');
+            const isMarked = item.getAttribute('data-marked') === 'true';
+            
+            if (type === 'all') {
+                item.style.display = 'flex';
+            } else if (type === 'marked') {
+                item.style.display = isMarked ? 'flex' : 'none';
+            } else {
+                item.style.display = status === type ? 'flex' : 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

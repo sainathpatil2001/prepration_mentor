@@ -1,0 +1,35 @@
+{% for ticket in page_obj %}
+<tr>
+    <td>
+        <div class="form-check">
+            <input class="form-check-input ticket-checkbox" type="checkbox" value="{{ ticket.ticket_id }}">
+        </div>
+    </td>
+    <td>
+        <small class="text-muted text-uppercase">{{ ticket.ticket_id|stringformat:"s"|slice:":8" }}</small>
+        {% if not ticket.is_read_by_admin %}
+            <span class="badge bg-danger ms-1" style="font-size: 0.65em;">NEW</span>
+        {% endif %}
+    </td>
+    <td>{{ ticket.user.username }}</td>
+    <td>{{ ticket.get_category_display }}</td>
+    <td class="fw-medium text-dark">{{ ticket.subject|default:"-" }}</td>
+    <td>
+        {% if ticket.status == 'sent' %}
+            <span class="badge bg-secondary">Sent</span>
+        {% elif ticket.status == 'seen' %}
+            <span class="badge bg-info">Seen</span>
+        {% elif ticket.status == 'resolved' %}
+            <span class="badge bg-success">Resolved</span>
+        {% endif %}
+    </td>
+    <td>{{ ticket.created_at|date:"M d, Y" }} h:i A</td>
+    <td>
+        <a href="{% url 'admin_support_detail' ticket.ticket_id %}" class="btn btn-sm btn-outline-primary">View</a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7" class="text-center">No tickets found.</td>
+</tr>
+{% endfor %}

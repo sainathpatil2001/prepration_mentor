@@ -1,0 +1,129 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-transparent border-0 pt-4 pb-2">
+                <h4 class="card-title fw-bold mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body pt-2">
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Custom User Search Field -->
+                    <div class="mb-3 position-relative">
+                        <label for="user-search-input" class="form-label">Username or Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control {% if form.username_or_email.errors %}is-invalid{% endif %}" 
+                                   id="user-search-input" 
+                                   name="username_or_email" 
+                                   value="{{ form.username_or_email.value|default:'' }}"
+                                   placeholder="Type to search users..." 
+                                   autocomplete="off" required>
+                            {% if form.username_or_email.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.username_or_email.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div id="user-search-results" class="list-group position-absolute w-100 shadow-sm" 
+                             style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;">
+                        </div>
+                        <div class="form-text">Start typing to search by username or email.</div>
+                    </div>
+
+                    <!-- Plan Selection -->
+                    <div class="mb-3">
+                        <label for="{{ form.plan.id_for_label }}" class="form-label">{{ form.plan.label }}</label>
+                        {{ form.plan }}
+                        {% if form.plan.errors %}
+                        <div class="text-danger small mt-1">{{ form.plan.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Add Subscription</button>
+                        <a href="{% url 'admin_dashboard_subscriptions' %}" class="btn btn-light">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('user-search-input');
+    const resultsContainer = document.getElementById('user-search-results');
+    let debounceTimer;
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        clearTimeout(debounceTimer);
+        
+        if (query.length < 2) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            fetch(`{% url 'admin_dashboard_search_users' %}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+                    if (data.results.length > 0) {
+                        data.results.forEach(user => {
+                            const item = document.createElement('a');
+                            item.href = '#';
+                            item.className = 'list-group-item list-group-item-action';
+                            item.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>${user.username}</strong>
+                                        <br>
+                                        <small class="text-muted">${user.email}</small>
+                                    </div>
+                                    <i class="bi bi-person-plus"></i>
+                                </div>
+                            `;
+                            item.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                searchInput.value = user.username; // Set value to username as backend expects
+                                resultsContainer.style.display = 'none';
+                            });
+                            resultsContainer.appendChild(item);
+                        });
+                        resultsContainer.style.display = 'block';
+                    } else {
+                        resultsContainer.innerHTML = '<div class="list-group-item text-muted">No users found</div>';
+                        resultsContainer.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching users:', error);
+                });
+        }, 300);
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

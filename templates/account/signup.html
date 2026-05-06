@@ -1,0 +1,622 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sign Up - Prepration Mentor{% endblock %}
+
+{% block container_class %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hide default navbar and footer for a clean, immersive experience */
+    .navbar-custom, body > footer {
+        display: none !important;
+    }
+    
+    /* Remove default main margin since navbar is hidden */
+    main {
+        margin-top: 0 !important;
+    }
+    
+    body {
+        background-color: #fff;
+        height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .split-screen {
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+    }
+
+    .left-panel {
+        flex: 1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 4rem;
+        color: white;
+        overflow: hidden;
+    }
+
+    /* Abstract shapes background */
+    .shape {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+    .shape-1 { width: 400px; height: 400px; top: -100px; right: -100px; }
+    .shape-2 { width: 300px; height: 300px; bottom: -50px; left: -50px; }
+    .shape-3 { width: 150px; height: 150px; top: 40%; left: 20%; animation: float 6s ease-in-out infinite; }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .right-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+        background: #fff;
+        position: relative;
+        overflow-y: auto; /* Allow scroll only on form if needed */
+    }
+
+    .auth-container {
+        width: 100%;
+        max-width: 420px;
+        padding: 2rem;
+    }
+
+    .auth-logo {
+        height: 50px;
+        margin-bottom: 2rem;
+        border-radius: 12px;
+    }
+
+    /* Modern Form Styling */
+    .form-control {
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        border: 2px solid #edf2f7;
+        background-color: #f8fafc;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        background-color: #fff;
+    }
+
+    .btn-signup {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-signup:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -5px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .quote-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 2.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 600px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .floating-star {
+        color: #ffd700;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Hide sidebar on mobile */
+    @media (max-width: 991px) {
+        .left-panel {
+            display: none;
+        }
+    }
+    
+    /* Custom Scrollbar for Right Panel */
+    .right-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+    .right-panel::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .right-panel::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.1);
+        border-radius: 20px;
+    }
+
+    /* Compact Form Styling */
+    .auth-container {
+        width: 100%;
+        max-width: 400px; /* Slightly narrower for modern look */
+        padding: 2rem;
+    }
+    
+    .auth-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .auth-logo {
+        height: 40px; /* Smaller logo */
+        margin-bottom: 1rem;
+        border-radius: 10px;
+    }
+    
+    /* Override Crispy Forms Spacing */
+    #div_id_username, #div_id_email, #div_id_password1, #div_id_password_2 {
+        margin-bottom: 0.8rem !important;
+    }
+    
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 0.3rem;
+    }
+    
+    .form-control {
+        padding: 0.6rem 1rem; /* More compact padding */
+        font-size: 0.95rem;
+    }
+    
+    .help-block, .form-text {
+        font-size: 0.75rem;
+        margin-top: 0.2rem;
+    }
+    /* Custom Toast Styling */
+    .toast-custom {
+        position: fixed;
+        bottom: 20px;
+        left: 20px; /* Default position */
+        z-index: 1050;
+        min-width: 320px; /* Increased width */
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+        border: 1px solid rgba(0,0,0,0.05);
+        display: none;
+        padding: 1.5rem; /* Increased padding */
+        animation: slideInLeft 0.3s ease-out;
+    }
+
+    /* Stack toasts */
+    #username-toast { bottom: 20px; }
+    #email-toast { bottom: 20px; }
+    #password-toast { bottom: 20px; } /* Will adjust dynamically or stack */
+    #password-match-toast { bottom: 20px; }
+
+    @keyframes slideInLeft {
+        from { transform: translateX(-100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .toast-header-custom {
+        font-weight: 700;
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        color: #2d3748;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .password-requirement {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem; /* Increased font size */
+        color: #718096;
+        margin-bottom: 6px;
+        transition: color 0.2s;
+    }
+    
+    .password-requirement.valid {
+        color: #10b981;
+    }
+    
+    .password-requirement i {
+        font-size: 1.1rem; /* Larger icons */
+    }
+
+    /* Hide default help text for password */
+    #div_id_password1 .form-text, 
+    #div_id_password1 .help-block {
+        display: none !important;
+    }
+    
+    /* Unified Theme Colors */
+    .text-primary, .hover-primary:hover {
+        color: #764ba2 !important;
+    }
+    .bg-white.text-primary {
+         color: #764ba2 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="split-screen">
+    <!-- Left Panel (Visual) -->
+    <div class="left-panel">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        
+        <div class="quote-card">
+            <div class="floating-star">
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+            </div>
+            <h2 class="fw-bold mb-4">"Success is not final, failure is not fatal: It is the courage to continue that counts."</h2>
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 48px; height: 48px;">
+                    PM
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold">Prepration Mentor</h5>
+                    <small class="opacity-75">Your Success Partner</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel (Form) -->
+    <div class="right-panel">
+        <div class="auth-container">
+            <div class="text-center auth-header">
+                <a href="{% url 'home' %}">
+                    <img src="{% static 'img/web_logo.jpg' %}" alt="Logo" class="auth-logo shadow-sm">
+                </a>
+                <h4 class="fw-bold text-dark mb-1">Create Account</h4>
+                <p class="text-muted small mb-0">Join us to start learning.</p>
+            </div>
+
+            <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
+                {% csrf_token %}
+                
+                {{ form|crispy }}
+                
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                {% endif %}
+                
+                <div class="d-grid mt-3">
+                    <button type="submit" class="btn btn-signup py-2 shadow-sm">
+                        Sign Up
+                    </button>
+                </div>
+            </form>
+            
+            <div class="text-center mt-4">
+                <p class="text-muted small">
+                    Already have an account? 
+                    <a href="{% url 'custom_login' %}" class="fw-bold text-primary text-decoration-none">Log In</a>
+                </p>
+                <div class="mt-3">
+                    <a href="{% url 'home' %}" class="small text-muted text-decoration-none">
+                        <i class="bi bi-arrow-left"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+            
+            <div class="mt-3 pt-3 border-top text-center">
+                <small class="text-muted" style="font-size: 0.75rem;">
+                    by signing up, you agree to our 
+                    <a href="{% url 'terms_of_service' %}" class="text-decoration-underline text-muted">Terms</a> & 
+                    <a href="{% url 'privacy_policy' %}" class="text-decoration-underline text-muted">Privacy Policy</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+</div>
+
+<!-- Username Toast -->
+<div id="username-toast" class="toast-custom">
+    <div class="toast-header-custom">
+        <i class="bi bi-person-badge"></i> Username Availability
+    </div>
+    <div id="username-status" class="d-flex align-items-center gap-2 text-muted fw-medium">
+        <i class="bi bi-circle"></i> <span>Checking...</span>
+    </div>
+</div>
+
+<!-- Email Toast -->
+<div id="email-toast" class="toast-custom">
+    <div class="toast-header-custom">
+        <i class="bi bi-envelope"></i> Email Status
+    </div>
+    <div id="email-status" class="d-flex align-items-center gap-2 text-muted fw-medium">
+        <i class="bi bi-circle"></i> <span>Checking...</span>
+    </div>
+    <!-- Hidden login suggestion -->
+    <div id="email-login-suggestion" class="mt-2 pt-2 border-top" style="display: none;">
+        <p class="small text-muted mb-2">This email is already registered.</p>
+        <a href="{% url 'custom_login' %}" class="btn btn-sm btn-primary w-100 rounded-pill fw-bold">
+            <i class="bi bi-box-arrow-in-right"></i> Login with this Email
+        </a>
+    </div>
+</div>
+
+<!-- Password Strength Toast -->
+<div id="password-toast" class="toast-custom">
+    <div class="toast-header-custom">
+        <i class="bi bi-shield-lock"></i> Password Strength
+    </div>
+    <div class="password-requirement" id="req-length">
+        <i class="bi bi-circle"></i> <span>At least 8 characters</span>
+    </div>
+    <div class="password-requirement" id="req-uppercase">
+        <i class="bi bi-circle"></i> <span>One uppercase letter</span>
+    </div>
+    <div class="password-requirement" id="req-lowercase">
+        <i class="bi bi-circle"></i> <span>One lowercase letter</span>
+    </div>
+    <div class="password-requirement" id="req-number">
+        <i class="bi bi-circle"></i> <span>One number</span>
+    </div>
+    <div class="password-requirement" id="req-special">
+        <i class="bi bi-circle"></i> <span>One special character</span>
+    </div>
+</div>
+
+<!-- Password Match Toast -->
+<div id="password-match-toast" class="toast-custom">
+    <div class="toast-header-custom">
+        <i class="bi bi-check-all"></i> Password Confirmation
+    </div>
+    <div id="match-status" class="d-flex align-items-center gap-2 text-muted fw-medium">
+        <i class="bi bi-circle"></i> <span>Passwords match</span>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Remove "Optional" from Email Label
+    const emailLabel = document.querySelector('label[for="id_email"]');
+    if (emailLabel) {
+        // Replace "Optional" text node if present, or hide specific element if structure allows
+        // Since Crispy often puts it in a span or text node, we'll iterate child nodes
+        emailLabel.childNodes.forEach(node => {
+            if (node.nodeType === 3 && node.textContent.includes('Optional')) {
+                node.textContent = node.textContent.replace('(Optional)', '').trim();
+            }
+        });
+        // Also check if there's a span with class asteriskField (there shouldn't be for optional)
+        // But if it's there as text content:
+        if (emailLabel.innerHTML.includes('(Optional)')) {
+             emailLabel.innerHTML = emailLabel.innerHTML.replace('(Optional)', '');
+        }
+    }
+
+    // Toast Manager
+    const toasts = {
+        username: document.getElementById('username-toast'),
+        email: document.getElementById('email-toast'),
+        password: document.getElementById('password-toast'),
+        match: document.getElementById('password-match-toast')
+    };
+
+    function showToast(name) {
+        // Hide all first to prevent overlap (or stack them if prefer)
+        Object.values(toasts).forEach(t => { 
+            if(t) t.style.display = 'none'; 
+        });
+        if (toasts[name]) toasts[name].style.display = 'block';
+    }
+
+    function hideToast(name) {
+        // Delay hide to allow clicks on toast elements (like Login button)
+        setTimeout(() => {
+             // Check if active element is still the input or something inside the toast (advanced)
+             // Simple delay is usually enough for navigation.
+             if (toasts[name]) toasts[name].style.display = 'none';
+        }, 200);
+    }
+
+    // 2. Username Check
+    const usernameInput = document.querySelector('input[name="username"]');
+    if (usernameInput) {
+        let debounceTimer;
+        const statusDiv = document.getElementById('username-status');
+        
+        usernameInput.addEventListener('focus', () => {
+           if(usernameInput.value.length > 0) showToast('username'); 
+        });
+        
+        usernameInput.addEventListener('blur', () => hideToast('username'));
+        
+        usernameInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const username = this.value;
+            
+            showToast('username');
+            this.classList.remove('is-valid', 'is-invalid');
+            
+            statusDiv.innerHTML = '<i class="bi bi-circle"></i> <span class="text-muted">Typing...</span>';
+            
+            if (username.length > 0) {
+                debounceTimer = setTimeout(() => {
+                    statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> <span>Checking availability...</span>';
+                    
+                    fetch(`{% url 'check_username' %}?username=${username}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.valid) {
+                                this.classList.add('is-valid');
+                                statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success fs-5"></i> <span class="text-success fw-bold">Username available</span>';
+                            } else {
+                                this.classList.add('is-invalid');
+                                statusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger fs-5"></i> <span class="text-danger fw-bold">' + data.message + '</span>';
+                            }
+                        })
+                        .catch(err => {
+                             statusDiv.innerHTML = '<span class="text-danger">Error checking.</span>';
+                        });
+                }, 500);
+            } else {
+                statusDiv.innerHTML = '<i class="bi bi-circle"></i> <span>Enter a username</span>';
+            }
+        });
+    }
+    
+    // 5. Email Check
+    const emailInput = document.querySelector('input[name="email"]');
+    if (emailInput) {
+        let debounceTimerEmail;
+        const emailStatus = document.getElementById('email-status');
+        const loginSuggestion = document.getElementById('email-login-suggestion');
+        
+        emailInput.addEventListener('focus', () => {
+             if (emailInput.value.length > 0) showToast('email');
+        });
+        
+        emailInput.addEventListener('blur', () => hideToast('email'));
+        
+        emailInput.addEventListener('input', function() {
+            clearTimeout(debounceTimerEmail);
+            const email = this.value;
+            showToast('email');
+            
+            this.classList.remove('is-valid', 'is-invalid');
+            loginSuggestion.style.display = 'none';
+            
+            if (email.length > 0) {
+                 emailStatus.innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div> <span>Checking availability...</span>';
+                 
+                 debounceTimerEmail = setTimeout(() => {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                         emailStatus.innerHTML = '<i class="bi bi-exclamation-circle-fill text-warning fs-5"></i> <span class="text-warning fw-bold">Invalid email format</span>';
+                         return;
+                    }
+                    
+                    fetch(`{% url 'check_email' %}?email=${encodeURIComponent(email)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.exists) {
+                                // Email taken - Show Login Option
+                                this.classList.add('is-invalid');
+                                emailStatus.innerHTML = '<i class="bi bi-person-check-fill text-primary"></i> <span class="text-primary fw-bold">Account found!</span>';
+                                loginSuggestion.style.display = 'block';
+                            } else if (data.valid) {
+                                // Email free
+                                this.classList.add('is-valid');
+                                emailStatus.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> <span class="text-success fw-bold">Email available</span>';
+                            } else {
+                                // Invalid for other reasons
+                                this.classList.add('is-invalid');
+                                emailStatus.innerHTML = '<span class="text-danger">' + data.message + '</span>';
+                            }
+                        })
+                        .catch(err => {
+                             emailStatus.innerHTML = '<span class="text-danger">Error checking.</span>';
+                        });
+                 }, 600);
+            } else {
+                 emailStatus.innerHTML = '<i class="bi bi-circle"></i> <span>Enter your email</span>';
+            }
+        });
+    }
+    
+    // 3. Password Strength
+    const passwordInput = document.querySelector('input[name="password1"]'); 
+    if (passwordInput) {
+        passwordInput.addEventListener('focus', () => showToast('password'));
+        passwordInput.addEventListener('blur', () => hideToast('password'));
+        
+        passwordInput.addEventListener('input', function() {
+            const val = this.value;
+            showToast('password');
+            
+            checkRequirement('req-length', val.length >= 8);
+            checkRequirement('req-uppercase', /[A-Z]/.test(val));
+            checkRequirement('req-lowercase', /[a-z]/.test(val));
+            checkRequirement('req-number', /[0-9]/.test(val));
+            checkRequirement('req-special', /[^A-Za-z0-9]/.test(val));
+        });
+    }
+    
+    function checkRequirement(id, isValid) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const icon = el.querySelector('i');
+        
+        if (isValid) {
+            el.classList.add('valid');
+            icon.className = 'bi bi-check-circle-fill text-success';
+        } else {
+            el.classList.remove('valid');
+            icon.className = 'bi bi-circle';
+        }
+    }
+
+    // 4. Password Match
+    // Note: crispy forms often names the confirm field 'password_2' or similar. 
+    // We try to find it dynamically or fallback to common names.
+    let confirmInput = document.querySelector('input[name="password_2"]') || document.querySelector('input[name="password_confirmation"]');
+    
+    if (confirmInput && passwordInput) {
+        const matchStatus = document.getElementById('match-status');
+        
+        confirmInput.addEventListener('focus', () => {
+             if (confirmInput.value.length > 0) showToast('match');
+        });
+        confirmInput.addEventListener('blur', () => hideToast('match'));
+        
+        confirmInput.addEventListener('input', function() {
+            showToast('match');
+            const val = this.value;
+            const original = passwordInput.value;
+            
+            if (val.length === 0) {
+                 matchStatus.innerHTML = '<i class="bi bi-circle"></i> <span>Confirm your password</span>';
+                 this.classList.remove('is-valid', 'is-invalid');
+                 return;
+            }
+
+            if (val === original) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+                matchStatus.innerHTML = '<i class="bi bi-check-circle-fill text-success fs-5"></i> <span class="text-success fw-bold">Passwords match!</span>';
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+                matchStatus.innerHTML = '<i class="bi bi-x-circle-fill text-danger fs-5"></i> <span class="text-danger fw-bold">Passwords do not match</span>';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

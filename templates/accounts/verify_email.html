@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Email - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center min-vh-75 align-items-center">
+    <div class="col-md-6 col-lg-5 col-xl-4">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-body p-5 text-center">
+                <div class="mb-4">
+                    <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex p-3 mb-3">
+                        <i class="bi bi-shield-lock-fill fs-1"></i>
+                    </div>
+                    <h3 class="fw-bold mb-2">Verify your email</h3>
+                    <p class="text-muted small">We've sent a 6-digit verification code to your email address.</p>
+                </div>
+
+                <form method="POST" action="{% url 'verify_email' %}" class="mb-4">
+                    {% csrf_token %}
+                    <div class="form-floating mb-4">
+                        <input type="text" class="form-control text-center fs-4 letter-spacing-2 fw-bold" id="otp" name="otp" maxlength="6" placeholder="000000" required autofocus autocomplete="off">
+                        <label for="otp">Enter 6-digit code</label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm">
+                        Verify Email
+                    </button>
+                </form>
+
+                <div class="border-top pt-4">
+                    <p class="text-muted small mb-3">Didn't receive the code?</p>
+                    <form method="POST" action="{% url 'send_verification_otp' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                            Resend Code
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-footer bg-light text-center py-3 border-0">
+                <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Check your spam folder if you don't see the email.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .letter-spacing-2 {
+        letter-spacing: 0.5em;
+    }
+    .min-vh-75 {
+        min-height: 75vh;
+    }
+</style>
+{% endblock %}

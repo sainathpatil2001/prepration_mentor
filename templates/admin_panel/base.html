@@ -1,0 +1,386 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background-color: #f5f6fa;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        [data-bs-theme="dark"] body {
+            background-color: #0f172a; /* Darker background for dark mode */
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, #1f3c88 0%, #2a5298 100%);
+            color: #fff;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .admin-sidebar-header {
+            padding: 1.5rem 1rem 1rem 1rem;
+            flex-shrink: 0;
+        }
+
+        .admin-sidebar-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+        
+        .admin-sidebar-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .admin-sidebar-content::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .admin-sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(31, 60, 136, 0.2); /* Slight darken for footer area */
+            flex-shrink: 0;
+        }
+
+        .admin-sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.85);
+            border-radius: 8px;
+            padding: 0.75rem 0.75rem;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .admin-sidebar .nav-link.active,
+        .admin-sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            transform: translateX(4px);
+        }
+
+        .admin-sidebar .nav-link i {
+            font-size: 1.1rem;
+            width: 1.5rem; /* Fixed width for icon alignment */
+            text-align: center;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 2rem;
+            width: calc(100% - 250px); /* Prevent overflow */
+        }
+
+        @media (max-width: 992px) {
+            .admin-layout {
+                flex-direction: column;
+            }
+
+            .admin-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                display: block;
+                padding: 0;
+            }
+            
+            .admin-sidebar-header, .admin-sidebar-footer {
+                padding: 1rem;
+            }
+            
+            .admin-sidebar-content {
+                padding: 0 1rem;
+                overflow-y: visible;
+                max-height: none;
+            }
+
+            .admin-content {
+                width: 100%;
+                padding: 1rem;
+            }
+        }
+
+        /* Toast Messages - Bottom Left */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 10px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar mb-4 mb-lg-0">
+            <div class="admin-sidebar-header">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-shield-lock-fill fs-3 me-2"></i>
+                    <div>
+                        <h5 class="mb-0">Admin Console</h5>
+                        <small>{{ request.user.get_full_name|default:request.user.username }}</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="admin-sidebar-content">
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if active_tab == 'overview' %}active{% endif %}"
+                        href="{% url 'admin_dashboard_overview' %}">
+                        <i class="bi bi-speedometer2"></i> Dashboard Overview
+                    </a>
+                    <a class="nav-link {% if active_tab == 'manage' %}active{% endif %}"
+                        href="{% url 'admin_dashboard_manage' %}">
+                        <i class="bi bi-journal-text"></i> Manage Test Sets
+                    </a>
+                    <a class="nav-link {% if active_tab == 'categories' %}active{% endif %}"
+                        href="{% url 'admin_dashboard_categories' %}">
+                        <i class="bi bi-tags"></i> Manage Categories
+                    </a>
+
+                    <a class="nav-link {% if active_tab == 'add' %}active{% endif %}"
+                        href="{% url 'admin_dashboard_add' %}">
+                        <i class="bi bi-plus-circle"></i> Add Test Set
+                    </a>
+                    <a class="nav-link {% if active_tab == 'drafts' %}active{% endif %}"
+                        href="{% url 'admin_dashboard_drafts' %}">
+                        <i class="bi bi-file-earmark-plus"></i> Drafts
+                    </a>
+                    <a class="nav-link {% if active_tab == 'reports' %}active{% endif %}"
+                        href="{% url 'admin_report_list' %}">
+                        <i class="bi bi-flag-fill"></i> Reported Questions
+                    </a>
+                    <a class="nav-link {% if active_tab == 'logs' %}active{% endif %}"
+                        href="{% url 'admin_dashboard_logs' %}">
+                        <i class="bi bi-clipboard-data"></i> Activity Logs
+                    </a>
+                    <a class="nav-link {% if active_tab == 'subscriptions' %}active{% endif %}"
+                        href="{% url 'admin_dashboard_subscriptions' %}">
+                        <i class="bi bi-credit-card"></i> Subscriptions
+                    </a>
+                    <a class="nav-link {% if active_tab == 'subscription_logs' %}active{% endif %}"
+                        href="{% url 'admin_dashboard_subscription_logs' %}">
+                        <i class="bi bi-clock-history"></i> Subscription Logs
+                    </a>
+
+                    <a class="nav-link {% if active_tab == 'referrals' %}active{% endif %}"
+                        href="{% url 'admin_referral_list' %}">
+                        <i class="bi bi-ticket-perforated"></i> Referral Codes
+                    </a>
+                    <a class="nav-link {% if active_tab == 'support_management' %}active{% endif %}"
+                        href="{% url 'admin_support_list' %}">
+                        <i class="bi bi-headset"></i> Support Management
+                    </a>
+                    {% if request.user.is_superuser %}
+                    <div class="my-2 border-top border-light border-opacity-10"></div>
+                    <a class="nav-link {% if active_tab == 'super_admin_reviews' %}active{% endif %}"
+                        href="{% url 'super_admin_reviews' %}">
+                        <i class="bi bi-star-fill"></i> Reviews & Feedback
+                    </a>
+                    {% endif %}
+                    <a class="nav-link {% if active_tab == 'privacy' %}active{% endif %}"
+                        href="{% url 'admin_privacy_policy_edit' %}">
+                        <i class="bi bi-shield-check"></i> Privacy Policy
+                    </a>
+                    <a class="nav-link {% if active_tab == 'backup' %}active{% endif %}"
+                        href="{% url 'admin_backup_restore' %}">
+                        <i class="bi bi-hdd-network"></i> Backup & Restore
+                    </a>
+                    <a class="nav-link {% if active_tab == 'email_settings' %}active{% endif %}"
+                        href="{% url 'admin_email_settings' %}">
+                        <i class="bi bi-envelope-gear"></i> Email Settings
+                    </a>
+                    <a class="nav-link {% if active_tab == 'email_marketing' %}active{% endif %}"
+                        href="{% url 'admin_email_marketing' %}">
+                        <i class="bi bi-megaphone"></i> Email Marketing
+                    </a>
+                </nav>
+            </div>
+
+            <div class="admin-sidebar-footer">
+                <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+                    <span class="text-white-50 small">Mode</span>
+                    <button class="btn btn-sm btn-outline-light border-0 d-flex align-items-center gap-2" id="themeToggle" style="background: rgba(255,255,255,0.1);">
+                        <i class="bi bi-moon-fill" id="themeIcon"></i>
+                        <span class="small" id="themeText">Dark</span>
+                    </button>
+                </div>
+                <form method="post" action="{% url 'admin_logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link text-start w-100 mb-0" style="background: none; border: none; color: rgba(255, 255, 255, 0.85); cursor: pointer;">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </form>
+            </div>
+        </aside>
+        <main class="admin-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="toast align-items-center {% if message.tags == 'warning' %}text-dark bg-warning{% elif message.tags == 'error' %}text-white bg-danger{% else %}text-white bg-{{ message.tags|default:'primary' }}{% endif %} border-0 show" style="min-width: 300px;" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
+                    {% if message.tags == 'error' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
+                    {% if message.tags == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2"></i>{% endif %}
+                    {{ message }}
+                </div>
+                <button type="button" class="btn-close {% if message.tags != 'warning' %}btn-close-white{% endif %} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toastEl = document.createElement('div');
+            
+            let bgClass = 'bg-primary text-white';
+            let icon = '';
+            
+            if (type === 'error' || type === 'danger') {
+                bgClass = 'bg-danger text-white';
+                icon = '<i class="bi bi-exclamation-triangle-fill me-2"></i>';
+            } else if (type === 'success') {
+                bgClass = 'bg-success text-white';
+                icon = '<i class="bi bi-check-circle-fill me-2"></i>';
+            } else if (type === 'warning') {
+                bgClass = 'bg-warning text-dark';
+                icon = '<i class="bi bi-exclamation-circle-fill me-2"></i>';
+            }
+            
+            toastEl.className = `toast align-items-center ${bgClass} border-0`;
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+            toastEl.style.minWidth = '300px';
+            
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${icon}${message}
+                    </div>
+                    <button type="button" class="btn-close ${type === 'warning' ? '' : 'btn-close-white'} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            container.appendChild(toastEl);
+            const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+            toast.show();
+            
+            // Cleanup after hidden
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.remove();
+            });
+        }
+    </script>
+    <script>
+        // Theme Toggle Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('themeToggle');
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+            
+            // Function to set theme
+            const setTheme = (theme) => {
+                document.documentElement.setAttribute('data-bs-theme', theme);
+                localStorage.setItem('admin_theme', theme);
+                
+                if (theme === 'dark') {
+                    icon.classList.remove('bi-moon-fill');
+                    icon.classList.add('bi-sun-fill');
+                    text.textContent = 'Light';
+                } else {
+                    icon.classList.remove('bi-sun-fill');
+                    icon.classList.add('bi-moon-fill');
+                    text.textContent = 'Dark';
+                }
+            };
+
+            // Initialize
+            const storedTheme = localStorage.getItem('admin_theme');
+            if (storedTheme) {
+                setTheme(storedTheme);
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                setTheme('dark');
+            }
+
+            // Event Listener
+            if (toggle) {
+                toggle.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-bs-theme');
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    setTheme(next);
+                });
+            }
+        });
+
+        // Disable right-click context menu
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Disable common developer tool shortcuts
+        document.addEventListener('keydown', function(e) {
+            // F12
+            if (e.key === 'F12') {
+                e.preventDefault();
+            }
+            // Ctrl+Shift+I (Inspect)
+            if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                e.preventDefault();
+            }
+            // Ctrl+Shift+J (Console)
+            if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+                e.preventDefault();
+            }
+            // Ctrl+U (View Source)
+            if (e.ctrlKey && e.key === 'u') {
+                e.preventDefault();
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

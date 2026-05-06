@@ -1,0 +1,532 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Exam Interface - Prepration Mentor{% endblock %}
+
+{% block container_class %}container-fluid p-0{% endblock %}
+{% block extra_css %}
+<style>
+    body {
+        overflow: hidden; /* Prevent body scroll, handle inside containers */
+        background-color: #f8fafc;
+        /* iOS fix for momentum scrolling */
+        -webkit-overflow-scrolling: touch;
+    }
+    .exam-header {
+        height: 60px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        z-index: 1000;
+        padding: 0 1.5rem;
+        position: fixed; /* Fix header for tablets */
+        top: 0;
+        left: 0;
+        right: 0;
+    }
+    .exam-container {
+        display: flex;
+        height: calc(100vh - 60px); 
+        margin-top: 60px; /* Offset for fixed header */
+        width: 100%;
+        position: relative;
+    }
+    .question-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
+        padding-bottom: 100px; /* Extra padding for bottom controls on mobile */
+        background: #f8fafc;
+        height: 100%;
+        /* iOS scroll fix */
+        -webkit-overflow-scrolling: touch;
+    }
+    .sidebar-area {
+        width: 350px;
+        background: white;
+        border-left: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        /* Ensure sidebar stays on side */
+        position: sticky;
+        top: 0; 
+        right: 0;
+    }
+
+    /* Responsive Queries for Tablets & Mobile */
+    @media (max-width: 991.98px) {
+        .exam-container {
+            flex-direction: column; /* Stack top-bottom on smaller screens if needed, or keep side-by-side but refined */
+        }
+        .sidebar-area {
+            position: fixed;
+            top: 60px;
+            right: 0;
+            bottom: 0;
+            width: 300px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 1050;
+            box-shadow: -4px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar-area.show {
+            transform: translateX(0);
+        }
+        
+        /* Add toggle button for sidebar */
+        .sidebar-toggle {
+            display: block !important;
+        }
+        
+        .question-area {
+            width: 100%;
+            padding: 1.5rem;
+        }
+    }
+    
+    /* Better scrolling for iOS */
+    * {
+        -webkit-backface-visibility: hidden;
+    }
+    .palette-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+    .palette-item {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%; /* Modern circle shape */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        color: #64748b;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        font-size: 0.9rem;
+    }
+    .palette-item:hover {
+        background: #e2e8f0;
+        color: #334155;
+    }
+    .palette-item.active {
+        border-color: #3b82f6;
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+    .palette-item.answered {
+        background: #22c55e;
+        color: white;
+    }
+    .palette-item.marked {
+        background: #a855f7;
+        color: white;
+    }
+    .palette-item.not-answered {
+        background: #ef4444;
+        color: white;
+    }
+    
+    .question-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .option-row {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .option-row:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+    }
+    .option-row input[type="radio"] {
+        margin-right: 1rem;
+        transform: scale(1.2);
+    }
+    .option-row.selected {
+        background-color: #eff6ff;
+        border-color: #3b82f6;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<header class="exam-header justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+        <h5 class="fw-bold mb-0 text-primary">{{ attempt.test.title }}</h5>
+    </div>
+    
+    <!-- Toggle Sidebar Mobile -->
+    <div class="d-lg-none">
+        <button class="btn btn-outline-secondary rounded-circle" type="button" onclick="document.querySelector('.sidebar-area').classList.toggle('show')">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+        </button>
+    </div>
+
+    <div class="d-flex align-items-center gap-4">
+        {% if attempt.is_timed %}
+        <div class="bg-light px-3 py-2 rounded-pill d-flex align-items-center border">
+            <i class="bi bi-clock-history text-danger me-2"></i>
+            <span id="timer" class="fw-bold font-monospace fs-5">00:00:00</span>
+        </div>
+        {% endif %}
+        
+        <button type="button" class="btn btn-danger rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#submitModal">
+            {% if attempt.is_timed %}Submit Test{% else %}Finish Practice{% endif %}
+        </button>
+    </div>
+</header>
+
+<div class="exam-container">
+    <!-- Question Area -->
+    <div class="question-area">
+        <form id="questionForm">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="text-muted fw-bold">Question {{ current_question_num }} of {{ total_questions }}</h5>
+                <div>
+                     <span class="badge bg-light text-dark border me-2">Marks: +{{ current_question.marks }}</span>
+                     {% if attempt.test.negative_marking_rule != 'none' %}
+                     <span class="badge bg-light text-danger border">Neg: -{{ attempt.test.calculate_negative_marks }}</span>
+                     {% endif %}
+                     <button type="button" class="btn btn-outline-danger btn-sm ms-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#reportModal">
+                        <i class="bi bi-flag-fill"></i> Report
+                    </button>
+                </div>
+            </div>
+
+            <div class="question-card">
+                <div class="mb-4 fs-5 lh-base">
+                    {% if current_question.question_text %}
+                        {{ current_question.question_text|linebreaks }}
+                    {% endif %}
+                </div>
+                
+                {% if current_question.question_image %}
+                <div class="mb-4">
+                    <img src="{{ current_question.question_image.url }}" class="img-fluid rounded border" alt="Question Image" style="max-height: 400px;">
+                </div>
+                {% endif %}
+                
+                <div class="options-list">
+                    {% for answer in current_question.answers.all %}
+                    <label class="option-row {% if user_answer.selected_answer.id == answer.id %}selected{% endif %}" onclick="selectOption(this)">
+                        <input type="radio" name="answer" value="{{ answer.id }}" {% if user_answer.selected_answer.id == answer.id %}checked{% endif %}>
+                        
+                        <div class="d-flex flex-column">
+                            {% if answer.answer_text %}
+                                <span>{{ answer.answer_text }}</span>
+                            {% endif %}
+                            
+                            {% if answer.answer_image %}
+                                <img src="{{ answer.answer_image.url }}" class="mt-2 rounded" alt="Answer Image" style="max-height: 150px; max-width: 100%;">
+                            {% endif %}
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+             <div class="d-flex justify-content-between align-items-center mt-5">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="markForReview" {% if user_answer.is_marked_for_review %}checked{% endif %}>
+                    <label class="form-check-label fw-medium text-muted" for="markForReview">Mark for Review</label>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    {% if current_question_num > 1 %}
+                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" onclick="saveAndNavigate({{ current_question_num|add:'-1' }})">
+                        <i class="bi bi-chevron-left"></i> Previous
+                    </button>
+                    {% endif %}
+                    
+                    <button type="button" class="btn btn-light border px-4 rounded-pill" onclick="clearResponse()">Clear</button>
+                    
+                    {% if current_question_num < total_questions %}
+                    <button type="button" class="btn btn-primary px-5 rounded-pill fw-bold" onclick="saveAndNext()">
+                        Save & Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-success px-5 rounded-pill fw-bold" onclick="saveAndNext()">
+                        Save & {% if attempt.is_timed %}Submit{% else %}Finish{% endif %} <i class="bi bi-check-lg"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sidebar Palette -->
+    <div class="sidebar-area">
+        <div class="p-3 border-bottom bg-light">
+             <div class="d-flex align-items-center justify-content-between mb-2">
+                 <h6 class="fw-bold mb-0">Question Palette</h6>
+             </div>
+             <div class="row g-2 small text-muted">
+                 <div class="col-6"><span class="status-indicator bg-success"></span> Answered</div>
+                 <div class="col-6"><span class="status-indicator bg-danger"></span> Not Answered</div>
+                 <div class="col-6"><span class="status-indicator" style="background:#a855f7"></span> Marked</div>
+                 <div class="col-6"><span class="status-indicator bg-white border"></span> Not Visited</div>
+             </div>
+        </div>
+        
+        <div class="palette-grid">
+            {% for q in questions %}
+            {% with q_id=q.id|stringformat:"i" %}
+            <a href="javascript:void(0)" onclick="saveAndNavigate({{ forloop.counter }})" 
+               class="palette-item 
+                      {% if forloop.counter == current_question_num %}active{% endif %}
+                      {% for qk, qv in user_answers.items %}
+                          {% if qk == q.id %}
+                              {% if qv.answered %}answered{% elif qv.marked %}marked{% elif qv.visited %}not-answered{% endif %}
+                          {% endif %}
+                      {% endfor %}"
+               data-id="{{ q.id }}">
+                {{ forloop.counter }}
+            </a>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        
+        <div class="mt-auto p-4 border-top bg-light text-center">
+            <button class="btn btn-outline-danger w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#submitModal">
+                Finish Exam
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Submit Modal -->
+<div class="modal fade" id="submitModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Submit Assessment?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-4">
+                <div class="text-center mb-4">
+                    <i class="bi bi-question-circle text-primary" style="font-size: 4rem;"></i>
+                </div>
+                <p class="text-center text-muted mb-0">Are you sure you want to {% if attempt.is_timed %}submit{% else %}finish{% endif %}? You won't be able to change your answers after {% if attempt.is_timed %}submission{% else %}finishing{% endif %}.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'exam_submit' attempt.id %}" class="btn btn-primary rounded-pill px-5 fw-bold">Yes, {% if attempt.is_timed %}Submit{% else %}Finish{% endif %}</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-flag-fill me-2"></i>Report Question</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reportForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Issue Type</label>
+                        <div class="d-flex flex-column gap-2">
+                            <label class="form-check p-3 border rounded bg-light cursor-pointer">
+                                <input class="form-check-input" type="radio" name="reportType" value="wrong_question" checked>
+                                <span class="form-check-label fw-medium">Wrong Question</span>
+                            </label>
+                            <label class="form-check p-3 border rounded bg-light cursor-pointer">
+                                <input class="form-check-input" type="radio" name="reportType" value="wrong_options">
+                                <span class="form-check-label fw-medium">Wrong Options</span>
+                            </label>
+                            <label class="form-check p-3 border rounded bg-light cursor-pointer">
+                                <input class="form-check-input" type="radio" name="reportType" value="spelling_mistake">
+                                <span class="form-check-label fw-medium">Spelling Mistake</span>
+                            </label>
+                            <label class="form-check p-3 border rounded bg-light cursor-pointer">
+                                <input class="form-check-input" type="radio" name="reportType" value="other">
+                                <span class="form-check-label fw-medium">Other Issue</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Description (Optional)</label>
+                        <textarea class="form-control bg-light" id="reportDescription" rows="3" placeholder="Please provide more details..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" onclick="submitReport()">Submit Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    {% if attempt.is_timed %}
+    let totalSeconds = {{ remaining_seconds }};
+    const timerDisplay = document.getElementById('timer');
+    
+    function updateTimer() {
+        if (totalSeconds <= 0) {
+            clearInterval(timerInterval);
+            alert("Time is up! Submitting exam...");
+            window.location.href = "{% url 'exam_submit' attempt.id %}";
+            return;
+        }
+
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        totalSeconds--;
+    }
+    
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer(); // Initial call
+    {% endif %}
+
+    // Status logic
+    function selectOption(element) {
+        document.querySelectorAll('.option-row').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        element.querySelector('input[type="radio"]').checked = true;
+    }
+
+    function clearResponse() {
+        document.querySelectorAll('.option-row').forEach(el => el.classList.remove('selected'));
+        document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
+    }
+
+    // Unified Save & Navigate
+    function saveAndNavigate(targetQuestionNum) {
+        const questionId = "{{ current_question.id }}";
+        const selectedOption = document.querySelector('input[name="answer"]:checked');
+        const marked = document.getElementById('markForReview').checked;
+        const answerId = selectedOption ? selectedOption.value : null;
+
+        const data = {
+            question_id: questionId,
+            answer_id: answerId,
+            marked: marked
+        };
+
+        fetch("{% url 'save_answer' attempt.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Navigate to target question
+                if (targetQuestionNum) {
+                    window.location.href = "?q=" + targetQuestionNum;
+                } else {
+                     // Default next behavior if no target
+                    const nextQ = {{ current_question_num }} + 1;
+                    if (nextQ <= {{ total_questions }}) {
+                        window.location.href = "?q=" + nextQ;
+                    } else {
+                        window.location.href = "?q=1"; 
+                    }
+                }
+            } else {
+                alert("Error saving answer: " + result.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Connection error. Please try again.");
+        });
+    }
+
+    // Alias for existing onclicks or update them
+    function saveAndNext() {
+        saveAndNavigate(null);
+    }
+
+    function submitReport() {
+        const questionId = "{{ current_question.id }}";
+        const reportType = document.querySelector('input[name="reportType"]:checked').value;
+        const description = document.getElementById('reportDescription').value;
+
+        const data = {
+            question_id: questionId,
+            report_type: reportType,
+            description: description
+        };
+
+        const btn = document.querySelector('#reportModal .btn-danger');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+        btn.disabled = true;
+
+        fetch("{% url 'submit_report' attempt.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            
+            if (result.success) {
+                // Hide modal using Bootstrap API
+                const modalEl = document.getElementById('reportModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+                
+                alert("Report submitted successfully. Thank you for your feedback!");
+                document.getElementById('reportForm').reset();
+            } else {
+                alert("Error submitting report: " + result.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert("Connection error. Please try again.");
+        });
+    }
+</script>
+{% endblock %}

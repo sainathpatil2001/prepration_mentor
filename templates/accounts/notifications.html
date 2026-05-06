@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-bell-fill me-2 text-primary"></i>Notifications</h5>
+                {% if notifications %}
+                <form method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" name="mark_all_read" class="btn btn-sm btn-outline-primary rounded-pill">
+                        <i class="bi bi-check-all me-1"></i>Mark all read
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if notifications %}
+                    <div class="list-group list-group-flush">
+                    {% for note in notifications %}
+                        <div class="list-group-item p-4 border-bottom {% if not note.is_read %}bg-primary-subtle{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="fw-bold mb-1 {{ note.is_read|yesno:'text-muted,text-dark' }}">{{ note.title }}</h6>
+                                    <p class="mb-2 text-muted small">{{ note.message }}</p>
+                                    
+                                    {% if note.action_url %}
+                                    <a href="{{ note.action_url }}" class="btn btn-sm btn-primary rounded-pill mb-2 px-3">
+                                        View Details <i class="bi bi-arrow-right ms-1"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <div class="text-muted extra-small" style="font-size: 0.75rem;">
+                                        <i class="bi bi-clock me-1"></i>{{ note.created_at|timesince }} ago
+                                    </div>
+                                </div>
+                                {% if not note.is_read %}
+                                <a href="{% url 'read_notification' note.id %}?next={{ request.path }}" class="btn btn-sm btn-light rounded-circle" title="Mark as read">
+                                    <i class="bi bi-check2"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-bell-slash text-muted fs-1 opacity-25"></i>
+                        <p class="text-muted mt-3">No notifications found.</p>
+                    </div>
+                {% endif %}
+            </div>
+            {% if notifications.has_other_pages %}
+            <div class="card-footer bg-light p-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if notifications.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link rounded-circle mx-1" href="?page={{ notifications.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in notifications.paginator.page_range %}
+                            {% if notifications.number == num %}
+                                <li class="page-item active"><span class="page-link rounded-circle mx-1">{{ num }}</span></li>
+                            {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
+                                <li class="page-item"><a class="page-link rounded-circle mx-1" href="?page={{ num }}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if notifications.has_next %}
+                            <li class="page-item">
+                                <a class="page-link rounded-circle mx-1" href="?page={{ notifications.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

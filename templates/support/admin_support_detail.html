@@ -1,0 +1,294 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Ticket Detail - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Typing Indicator Animation */
+    .typing-dots {
+        display: flex;
+        align-items: center;
+        background: #f1f5f9;
+        padding: 8px 12px;
+        border-radius: 12px;
+        width: fit-content;
+    }
+    .typing-dots span {
+        height: 6px;
+        width: 6px;
+        margin: 0 2px;
+        background-color: #94a3b8;
+        border-radius: 50%;
+        display: inline-block;
+        animation: typing-bounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing-bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1.0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div class="d-flex align-items-center">
+        <h1 class="h2 mb-0 me-3">Ticket Detail</h1>
+         <span class="badge bg-{% if ticket.status == 'resolved' %}success{% elif ticket.status == 'sent' %}warning text-dark{% elif ticket.status == 'seen' %}info text-dark{% else %}secondary{% endif %} fs-6">
+            {{ ticket.get_status_display }}
+        </span>
+    </div>
+
+    <div class="btn-toolbar mb-2 mb-md-0 d-flex align-items-center gap-3">
+         <form method="post" class="d-flex align-items-center">
+            {% csrf_token %}
+            <input type="hidden" name="status_update" value="true">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text fw-bold">Status</span>
+                <select name="status" class="form-select" style="max-width: 150px;">
+                    {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if ticket.status == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+
+        <a href="{% url 'admin_support_list' %}" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row">
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Ticket Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Ticket ID:</div>
+                    <div class="col-md-8 text-uppercase">{{ ticket.ticket_id|stringformat:"s"|slice:":8" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Subject:</div>
+                    <div class="col-md-8 fw-bold text-primary">{{ ticket.subject }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">User:</div>
+                    <div class="col-md-8">{{ ticket.user.username }} ({{ ticket.user.email }})</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Category:</div>
+                    <div class="col-md-8">{{ ticket.get_category_display }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Date Created:</div>
+                    <div class="col-md-8">{{ ticket.created_at|date:"F d, Y H:i" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Last Updated:</div>
+                    <div class="col-md-8">{{ ticket.updated_at|date:"F d, Y H:i" }}</div>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <label class="fw-bold mb-2">Description:</label>
+                    <div class="p-3 bg-light border rounded">
+                        {{ ticket.description|linebreaksbr }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversation & Reply Section -->
+        <div class="card mb-4 shadow-sm" style="height: calc(100vh - 300px); min-height: 500px;">
+            <div class="card-header bg-white border-bottom pt-3 pb-2 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-chat-dots me-2 text-primary"></i>Conversation History
+                </h5>
+                <span class="badge bg-light text-secondary border">ID: {{ ticket.ticket_id|stringformat:"s"|slice:":8" }}</span>
+            </div>
+            
+            <div class="card-body d-flex flex-column p-0" style="overflow: hidden;">
+                <!-- Chat Area -->
+                <div id="chat-box" class="flex-grow-1 p-3" style="overflow-y: auto; background-color: #f8f9fa;">
+                    
+                    <!-- Ticket Description as Initial Message -->
+                    <div class="d-flex flex-column align-items-start mb-4">
+                        <div class="p-3 bg-white border rounded shadow-sm" style="max-width: 85%;">
+                            <small class="fw-bold text-muted d-block mb-1">
+                                <i class="bi bi-person-circle me-1"></i>{{ ticket.user.username }} (Original Request)
+                            </small>
+                            <div class="text-dark">{{ ticket.description|linebreaksbr }}</div>
+                        </div>
+                        <small class="text-muted ms-1 mt-1" style="font-size: 0.75rem;">{{ ticket.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+
+                    <div id="message-container">
+                        {% include 'support/_message_list.html' with admin_view=True %}
+                    </div>
+                    
+                    <!-- Typing Indicator -->
+                    <div id="typing-indicator" class="d-none mt-2 ms-2">
+                        <div class="typing-dots p-2 bg-white border rounded-3 shadow-sm">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="small text-muted ms-1">User is typing...</span>
+                    </div>
+                </div>
+
+                <!-- Reply Area (Fixed at Bottom) -->
+                <div class="card-footer bg-white border-top p-3">
+                    {% if ticket.status != 'resolved' %}
+                    <form id="reply-form" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="message_send" value="true">
+                        
+                        <div class="d-flex gap-2">
+                            <div class="flex-grow-1">
+                                <textarea name="message" id="id_message" class="form-control border-0 bg-light" rows="2" placeholder="Type your reply here..." style="resize: none;" required></textarea>
+                            </div>
+                            <div class="d-flex flex-column justify-content-end gap-2">
+                                <div class="position-relative">
+                                    <input type="file" name="attachment" id="id_attachment" class="d-none">
+                                    <label for="id_attachment" class="btn btn-light border btn-sm w-100" title="Attach File">
+                                        <i class="bi bi-paperclip"></i>
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm" id="send-btn">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="file-name-display" class="small text-muted mt-1 text-truncate" style="max-width: 300px;"></div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-success border-0 shadow-sm d-flex align-items-center mb-0 py-2">
+                        <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                        <div>This ticket has been resolved. Change status to reopen.</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const messageContainer = document.getElementById('message-container');
+    const replyForm = document.getElementById('reply-form');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const messageInput = document.getElementById('id_message');
+    
+    let pollInterval;
+    let lastMessageCount = 0;
+    let isTypingSent = false;
+
+    function scrollToBottom() {
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Initialize message count
+    lastMessageCount = document.querySelectorAll('.chat-bubble-wrapper').length;
+
+    function fetchMessages() {
+        if (!messageContainer) return;
+        fetch("{% url 'get_messages' ticket.ticket_id %}")
+            .then(response => response.json())
+            .then(data => {
+                // Typing Indicator
+                if (data.is_typing) {
+                    typingIndicator.classList.remove('d-none');
+                } else {
+                    typingIndicator.classList.add('d-none');
+                }
+
+                // Check if message count changed to prevent flicker
+                if (data.message_count !== lastMessageCount) {
+                    const isAtBottom = (chatBox.scrollHeight - chatBox.clientHeight) <= (chatBox.scrollTop + 50);
+                    messageContainer.innerHTML = data.html;
+                    lastMessageCount = data.message_count;
+                    if (isAtBottom) {
+                        scrollToBottom();
+                    }
+                }
+            })
+            .catch(error => console.error('Error fetching messages:', error));
+    }
+
+    // Typing Status Update
+    if (messageInput) {
+        messageInput.addEventListener('keydown', function() {
+            if (!isTypingSent) {
+                isTypingSent = true;
+                fetch("{% url 'update_typing_status' ticket.ticket_id %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).catch(e => console.error(e));
+                
+                // Reset flag after 4 seconds
+                setTimeout(() => { isTypingSent = false; }, 4000);
+            }
+        });
+    }
+
+    // Scroll to bottom on initial load
+    scrollToBottom();
+
+    // Poll for new messages every 3 seconds
+    pollInterval = setInterval(fetchMessages, 3000);
+
+    // Handle form submission via AJAX
+    if (replyForm) {
+        replyForm.onsubmit = function(e) {
+            e.preventDefault();
+            const sendBtn = document.getElementById('send-btn');
+            const originalBtnHtml = sendBtn.innerHTML;
+            
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+
+            const formData = new FormData(this);
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    replyForm.reset();
+                    fetchMessages();
+                } else {
+                    alert('Error sending message: ' + JSON.stringify(data.errors));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Fallback to normal submission if AJAX fails
+                // this.submit();
+            })
+            .finally(() => {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalBtnHtml;
+                scrollToBottom();
+            });
+        };
+    }
+</script>
+{% endblock %}

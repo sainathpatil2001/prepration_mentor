@@ -1,0 +1,163 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Email Marketing - Admin Console{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-0 border-bottom">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                            <i class="bi bi-megaphone-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1 fw-bold text-dark">Email Marketing</h4>
+                            <p class="mb-0 text-muted small">Send promotional emails or announcements to users</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                {% if not email_config_active %}
+                <div class="alert alert-warning border-0 bg-warning bg-opacity-10 mb-4">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Warning:</strong> No active Email Configuration found. Please <a href="{% url 'admin_email_settings' %}" class="alert-link">configure SMTP settings</a> first.
+                </div>
+                {% endif %}
+
+                <form method="post" class="needs-validation" novalidate id="emailForm">
+                    {% csrf_token %}
+                    
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                             <div class="mb-3">
+                                <label for="audience" class="form-label fw-medium">Audience</label>
+                                <select class="form-select" id="audience" name="audience" required>
+                                    <option value="" selected disabled>Select Audience...</option>
+                                    <option value="all">All Users ({{ total_users }})</option>
+                                    <option value="subscribers">Subscribers Only ({{ subscribers_count }})</option>
+                                    <option value="non_subscribers">Non-Subscribers ({{ non_subscribers_count }})</option>
+                                </select>
+                                <div class="form-text text-muted">Select who will receive this email.</div>
+                             </div>
+                        </div>
+
+                        <div class="col-md-12">
+                             <div class="mb-3">
+                                <label for="subject" class="form-label fw-medium">Subject</label>
+                                <input type="text" class="form-control" id="subject" name="subject" required placeholder="Enter email subject">
+                             </div>
+                        </div>
+
+                        <div class="col-md-12">
+                             <div class="mb-3">
+                                <label for="message" class="form-label fw-medium">Message</label>
+                                <textarea class="form-control" id="message" name="message" rows="10" required placeholder="Type your message here..."></textarea>
+                                <div class="form-text text-muted">
+                                    You can use plain text. HTML checks will be added in future versions.
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+
+                    <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary px-4" {% if not email_config_active %}disabled{% endif %}>
+                            <i class="bi bi-send-fill me-2"></i> Send Campaign
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <h5 class="fw-bold text-dark mb-3 mt-5">Recent Campaigns</h5>
+        <div class="card shadow-sm border-0">
+             <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Subject</th>
+                            <th>Audience</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for campaign in recent_campaigns %}
+                        <tr>
+                            <td class="ps-4 fw-medium">{{ campaign.subject }}</td>
+                            <td>
+                                {% if campaign.audience == 'all' %}
+                                    <span class="badge bg-secondary">All Users</span>
+                                {% elif campaign.audience == 'subscribers' %}
+                                    <span class="badge bg-success">Subscribers</span>
+                                {% else %}
+                                    <span class="badge bg-info text-dark">Non-Subscribers</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if campaign.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif campaign.status == 'processing' %}
+                                    <span class="badge bg-primary">Sending...</span>
+                                {% elif campaign.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px; width: 100px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {% if campaign.total_recipients > 0 %}{% widthratio campaign.sent_count campaign.total_recipients 100 %}{% else %}0{% endif %}%">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ campaign.sent_count }}/{{ campaign.total_recipients }}</small>
+                                </div>
+                            </td>
+                            <td class="text-muted small">{{ campaign.created_at|date:"M d, H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No campaigns sent yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+             </div>
+        </div>
+
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Simple confirmation before sending
+    document.getElementById('emailForm').addEventListener('submit', function(e) {
+        if (!confirm('Are you sure you want to send this email to the selected audience? This action cannot be undone.')) {
+            e.preventDefault();
+        }
+    });
+
+    // Simple Auto-Refresh for progress if there are active campaigns
+    {% if recent_campaigns %}
+        let shouldRefresh = false;
+        {% for c in recent_campaigns %}
+            {% if c.status == 'processing' or c.status == 'pending' %}
+                shouldRefresh = true;
+            {% endif %}
+        {% endfor %}
+        
+        if (shouldRefresh) {
+            setTimeout(function(){ window.location.reload(); }, 5000);
+        }
+    {% endif %}
+
+</script>
+{% endblock %}
+{% endblock %}

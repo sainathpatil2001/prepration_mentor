@@ -1,0 +1,173 @@
+{% for test in tests %}
+<div class="col-md-6 col-lg-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm transition-transform hover-lift bg-white">
+        <!-- Card Header: Category & Bookmark -->
+        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-start">
+            <div>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-bold small mb-2">
+                    {{ test.category.name|default:"General" }}
+                </span>
+                {% if test.user_data.status == 'in_progress' %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1 small ms-1"><i class="bi bi-play-circle-fill me-1"></i>In Progress</span>
+                {% elif test.user_data.status == 'completed' %}
+                    <span class="badge bg-success-subtle text-success-emphasis rounded-pill px-2 py-1 small ms-1"><i class="bi bi-check-circle-fill me-1"></i>Completed</span>
+                {% endif %}
+            </div>
+            <button class="btn btn-link p-0 save-test-btn" data-test-id="{{ test.id }}" title="{% if test.is_saved %}Remove from saved{% else %}Save for later{% endif %}">
+                <i class="bi {% if test.is_saved %}bi-bookmark-fill text-warning{% else %}bi-bookmark text-muted{% endif %} fs-5"></i>
+            </button>
+        </div>
+
+        <div class="card-body px-4 pb-4 pt-3 d-flex flex-column">
+            <!-- Title -->
+            <h5 class="card-title fw-bold text-dark mb-2 text-truncate" title="{{ test.title }}">{{ test.title }}</h5>
+            
+            <!-- Description -->
+            <p class="card-text text-muted small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                {{ test.description|default:"No description available." }}
+            </p>
+            
+            <!-- Stats Grid -->
+            <div class="row g-2 mb-3 small text-muted">
+                <div class="col-6">
+                    <div class="d-flex align-items-center bg-light rounded p-2">
+                        <i class="bi bi-clock me-2 text-primary"></i>
+                        <span>{{ test.duration_minutes }} min</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex align-items-center bg-light rounded p-2">
+                        <i class="bi bi-patch-question me-2 text-primary"></i>
+                        <span>{{ test.questions.count }} Qs</span>
+                    </div>
+                </div>
+                <div class="col-12">
+                     <div class="d-flex align-items-center bg-light rounded p-2 text-truncate">
+                        <i class="bi bi-calendar3 me-2 text-secondary"></i>
+                        <span>Uploaded: {{ test.published_at|date:"M Y" }}</span>
+                    </div>
+                </div>
+                <!-- Optional: Marks -->
+                <!-- <div class="col-12">
+                    <div class="d-flex align-items-center bg-light rounded p-2">
+                        <i class="bi bi-trophy me-2 text-warning"></i>
+                        <span>{{ test.total_marks }} Marks</span>
+                    </div>
+                </div> -->
+            </div>
+
+            <!-- User Progress / Score -->
+            {% if test.user_data.status == 'completed' %}
+            <div class="mb-3 p-2 bg-success-subtle rounded border border-success-subtle d-flex justify-content-between align-items-center">
+                <span class="small text-success-emphasis fw-bold">Last Score</span>
+                <span class="fw-bold text-success">{{ test.user_data.last_score|default:"0" }}%</span>
+            </div>
+            {% endif %}
+            
+            <!-- Action Button -->
+            <div class="mt-auto">
+                {% if test.user_data.status == 'in_progress' %}
+                    <a href="{% url 'exam_interface' test.user_data.last_attempt_id %}" class="btn btn-warning w-100 rounded-pill fw-bold py-2 shadow-sm text-dark">
+                        Resume Test
+                    </a>
+                {% elif test.user_data.status == 'completed' %}
+                     <div class="d-flex gap-2">
+                        <a href="{% url 'exam_results' test.user_data.last_attempt_id %}" class="btn btn-outline-primary w-50 rounded-pill fw-bold py-2">
+                            Results
+                        </a>
+                        <a href="{% url 'test_detail' test.id %}" class="btn btn-outline-dark w-50 rounded-pill fw-bold py-2">
+                            Retake
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="{% url 'test_detail' test.id %}" class="btn btn-primary w-100 rounded-pill fw-bold py-2 shadow-sm">
+                        {% if has_subscription %}Start Test{% else %}View Details{% endif %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="col-12 text-center py-5">
+    <div class="text-muted opacity-50 mb-3">
+        <i class="bi bi-search fs-1"></i>
+    </div>
+    <h5>No tests found matching your criteria.</h5>
+    <p class="text-muted">Try adjusting your filters or search query.</p>
+    <button class="btn btn-outline-primary rounded-pill mt-2" onclick="document.getElementById('clear-filters').click()">Clear Filters</button>
+</div>
+{% endfor %}
+
+<style>
+    .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+</style>
+</style>
+
+<script>
+    document.querySelectorAll('.save-test-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const testId = this.getAttribute('data-test-id');
+            const icon = this.querySelector('i');
+            
+            // Optimistic update
+            const isSaved = icon.classList.contains('bi-bookmark-fill');
+            
+            if (isSaved) {
+                icon.classList.remove('bi-bookmark-fill', 'text-warning');
+                icon.classList.add('bi-bookmark', 'text-muted');
+                this.title = "Save for later";
+            } else {
+                icon.classList.remove('bi-bookmark', 'text-muted');
+                icon.classList.add('bi-bookmark-fill', 'text-warning');
+                this.title = "Remove from saved";
+            }
+            
+            fetch(`/tests/${testId}/toggle-save/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    // Revert if failed
+                    if (isSaved) {
+                        icon.classList.add('bi-bookmark-fill', 'text-warning');
+                        icon.classList.remove('bi-bookmark', 'text-muted');
+                        this.title = "Remove from saved";
+                    } else {
+                        icon.classList.add('bi-bookmark', 'text-muted');
+                        icon.classList.remove('bi-bookmark-fill', 'text-warning');
+                        this.title = "Save for later";
+                    }
+                    alert('Error saving test: ' + data.error);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                // Revert on error
+                 if (isSaved) {
+                        icon.classList.add('bi-bookmark-fill', 'text-warning');
+                        icon.classList.remove('bi-bookmark', 'text-muted');
+                        this.title = "Remove from saved";
+                    } else {
+                        icon.classList.add('bi-bookmark', 'text-muted');
+                        icon.classList.remove('bi-bookmark-fill', 'text-warning');
+                        this.title = "Save for later";
+                    }
+            });
+        });
+    });
+</script>

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Page Not Found - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row align-items-center justify-content-center min-vh-75 text-center">
+    <div class="col-lg-6">
+        <div class="mb-5">
+            <h1 class="display-1 fw-bold text-primary mb-3" style="font-size: 8rem; text-shadow: 2px 2px 0 var(--bs-primary-bg-subtle);">404</h1>
+            <h2 class="fw-bold mb-3">Oops! Page not found.</h2>
+            <p class="lead text-muted mb-4">The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'home' %}" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm transition-transform hover-scale">
+                    Go Home
+                </a>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill px-5 py-3 fw-bold transition-transform hover-scale">
+                    Go Back
+                </a>
+            </div>
+        </div>
+        <div class="mt-5 opacity-25">
+             <i class="bi bi-compass fs-1 display-1"></i>
+        </div>
+    </div>
+</div>
+
+<style>
+    .min-vh-75 { min-height: 75vh; }
+    .hover-scale { transition: transform 0.2s ease; }
+    .hover-scale:hover { transform: scale(1.05); }
+</style>
+{% endblock %}

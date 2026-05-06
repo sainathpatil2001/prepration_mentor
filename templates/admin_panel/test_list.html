@@ -1,0 +1,152 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Manage Test Sets{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Manage Test Sets</h2>
+        <p class="text-muted mb-0">Search, publish, hide, or update test sets quickly.</p>
+    </div>
+    <a href="{% url 'admin_dashboard_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Add Test Set
+    </a>
+</div>
+
+<form method="get" class="card mb-4 shadow-sm border-0">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label for="q" class="form-label">Search</label>
+                <input type="text" class="form-control" name="q" id="q" value="{{ query }}" placeholder="Search by title or description">
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All</option>
+                    <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Published</option>
+                    <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="visibility" class="form-label">Visibility</label>
+                <select class="form-select" id="visibility" name="visibility">
+                    <option value="">All</option>
+                    <option value="visible" {% if visibility_filter == 'visible' %}selected{% endif %}>Visible</option>
+                    <option value="hidden" {% if visibility_filter == 'hidden' %}selected{% endif %}>Hidden</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-grid">
+                <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        {% if page_obj.object_list %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Visibility</th>
+                        <th>Updated</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in page_obj %}
+                    <tr>
+                        <td>
+                            <strong>{{ test.title }}</strong>
+                            <div class="text-muted small">{{ test.description|truncatewords:12 }}</div>
+                        </td>
+                        <td>{{ test.category.name|default:"—" }}</td>
+                        <td>
+                            {% if test.status == 'published' %}
+                                <span class="badge text-bg-success">Published</span>
+                            {% else %}
+                                <span class="badge text-bg-warning text-dark">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if test.is_hidden %}
+                                <span class="badge text-bg-secondary">Hidden</span>
+                            {% else %}
+                                <span class="badge text-bg-primary">Visible</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ test.updated_at|date:"Y-m-d H:i" }}</td>
+                        <td class="text-end table-actions">
+                            <a href="{% url 'admin_dashboard_edit' test.id %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="post" action="{% url 'admin_dashboard_toggle_visibility' test.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if test.is_hidden %}btn-outline-success{% else %}btn-outline-warning{% endif %}">
+                                    {% if test.is_hidden %}
+                                        <i class="bi bi-eye"></i>
+                                    {% else %}
+                                        <i class="bi bi-eye-slash"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                            {% if test.status == 'published' %}
+                            <form method="post" action="{% url 'admin_dashboard_save_draft' test.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="redirect_to" value="{% url 'admin_dashboard_manage' %}">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Save as Draft">
+                                    <i class="bi bi-file-earmark-plus"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <form method="post" action="{% url 'admin_dashboard_publish' test.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="redirect_to" value="{% url 'admin_dashboard_manage' %}">
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Publish">
+                                    <i class="bi bi-upload"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <!-- Delete trigger -->
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ test.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+
+                            <!-- Delete confirmation modal -->
+                            <div class="modal fade" id="deleteModal{{ test.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ test.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel{{ test.id }}">Delete Test Set</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete <strong>{{ test.title }}</strong>? This action cannot be undone.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="post" action="{% url 'admin_dashboard_delete' test.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'admin_panel/pagination.html' with page_obj=page_obj %}
+        {% else %}
+        <p class="text-muted mb-0">No test sets found. Try adjusting your filters or create a new test set.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

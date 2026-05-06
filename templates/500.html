@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Server Error - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row align-items-center justify-content-center min-vh-75 text-center">
+    <div class="col-lg-6">
+        <div class="mb-5">
+            <h1 class="display-1 fw-bold text-danger mb-3" style="font-size: 8rem; text-shadow: 2px 2px 0 var(--bs-warning-bg-subtle);">500</h1>
+            <h2 class="fw-bold mb-3">Internal Server Error</h2>
+            <p class="lead text-muted mb-4">Something went wrong on our end. We are working to fix it. Please try again later.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'home' %}" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm transition-transform hover-scale">
+                    Go Home
+                </a>
+                <a href="javascript:location.reload()" class="btn btn-outline-secondary rounded-pill px-5 py-3 fw-bold transition-transform hover-scale">
+                    Reload Page
+                </a>
+            </div>
+        </div>
+        <div class="mt-5 opacity-25">
+             <i class="bi bi-cone-striped fs-1 display-1 text-warning"></i>
+        </div>
+    </div>
+</div>
+
+<style>
+    .min-vh-75 { min-height: 75vh; }
+    .hover-scale { transition: transform 0.2s ease; }
+    .hover-scale:hover { transform: scale(1.05); }
+</style>
+{% endblock %}

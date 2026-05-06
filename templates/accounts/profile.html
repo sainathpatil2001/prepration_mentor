@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Profile - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Top Header: Profile Info & Navigation -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column flex-md-row align-items-center gap-4">
+                    <!-- Profile Picture -->
+                    <div class="position-relative">
+                        {% if profile.profile_picture %}
+                            <img src="{{ profile.profile_picture.url }}" class="rounded-circle border border-3 border-white shadow-sm" style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold fs-2 shadow-inner" style="width: 80px; height: 80px;">
+                                {{ user.username|first|upper }}
+                            </div>
+                        {% endif %}
+                        <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle p-2" style="transform: translate(-10%, -10%);">
+                            <span class="visually-hidden">Online</span>
+                        </span>
+                    </div>
+
+                    <!-- User Details -->
+                    <div class="text-center text-md-start flex-grow-1">
+                        <h4 class="fw-bold text-dark mb-1">{{ user.get_full_name|default:user.username }}</h4>
+                        <p class="text-muted mb-2">{{ user.email }}</p>
+                        {% if active_subscription %}
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1">
+                                <i class="bi bi-star-fill me-1"></i> {{ active_subscription.plan.name }}
+                            </span>
+                        {% else %}
+                            <a href="{% url 'add_funds' %}" class="btn btn-sm btn-outline-primary rounded-pill">Upgrade Plan</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr class="my-4 text-muted-2">
+
+                <!-- Navigation Tabs -->
+                <nav class="nav nav-pills flex-column flex-sm-row gap-2">
+                    <a class="nav-link flex-sm-fill text-sm-center {% if active_tab == 'overview' %}active{% endif %} rounded-3 px-3 py-2" href="?tab=overview">
+                        <i class="bi bi-grid-fill me-2"></i>Overview
+                    </a>
+                    <a class="nav-link flex-sm-fill text-sm-center {% if active_tab == 'update' %}active{% endif %} rounded-3 px-3 py-2" href="?tab=update">
+                        <i class="bi bi-person-gear me-2"></i>Edit Profile
+                    </a>
+                    <a class="nav-link flex-sm-fill text-sm-center {% if active_tab == 'password' %}active{% endif %} rounded-3 px-3 py-2" href="?tab=password">
+                        <i class="bi bi-lock-fill me-2"></i>Password
+                    </a>
+                    <a class="nav-link flex-sm-fill text-sm-center {% if active_tab == 'payment_history' %}active{% endif %} rounded-3 px-3 py-2" href="?tab=payment_history">
+                        <i class="bi bi-clock-history me-2"></i>Payment History
+                    </a>
+                    <a class="nav-link flex-sm-fill text-sm-center rounded-3 px-3 py-2" href="{% url 'user_support' %}">
+                        <i class="bi bi-headset me-2"></i>Help & Support
+                    </a>
+                    <a class="nav-link flex-sm-fill text-sm-center text-danger rounded-3 px-3 py-2 ms-sm-auto flex-sm-grow-0" href="{% url 'custom_logout' %}">
+                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                
+                <!-- Overview Tab -->
+                {% if active_tab == 'overview' %}
+                    <h4 class="fw-bold mb-4 text-dark position-relative d-inline-block">Profile Overview
+                        <div class="position-absolute bottom-0 start-0 w-50 border-bottom border-primary border-3 rounded"></div>
+                    </h4>
+                    
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="p-4 bg-light rounded-4 h-100 border">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-white p-2 rounded-3 shadow-sm text-primary fs-4 me-3">
+                                        <i class="bi bi-person-lines-fill"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-0">Personal Details</h6>
+                                </div>
+                                <div class="vstack gap-2 text-muted small">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Full Name:</span>
+                                        <span class="text-dark fw-medium">{{ user.get_full_name|default:'-' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Phone:</span>
+                                        <span class="text-dark fw-medium">{{ profile.phone|default:'-' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Location:</span>
+                                        <span class="text-dark fw-medium">{{ profile.city|default:'-' }}, {{ profile.country|default:'-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="p-4 bg-primary-subtle rounded-4 h-100 border border-primary-subtle">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-white p-2 rounded-3 shadow-sm text-primary fs-4 me-3">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-0 text-primary">Subscription Status</h6>
+                                </div>
+                                {% if active_subscription %}
+                                    <div class="text-center py-2">
+                                        <h3 class="mb-0 fw-bold text-primary">{{ active_subscription.plan.name }}</h3>
+                                        <span class="badge bg-success bg-opacity-75 mb-2">Active</span>
+                                        <p class="small text-muted mb-0">Expires on: {{ active_subscription.expires_at|date:"M d, Y" }}</p>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-3">
+                                        <p class="ssmall text-muted mb-3">No active plan found.</p>
+                                        <a href="{% url 'add_funds' %}" class="btn btn-primary btn-sm rounded-pill px-4">Subscribe Now</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Update Profile Tab -->
+                {% if active_tab == 'update' %}
+                    <h4 class="fw-bold mb-4">Edit Profile</h4>
+                    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <!-- Profile Picture Upload -->
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Profile Picture</label>
+                                <div class="d-flex align-items-center gap-3 p-3 border rounded-3 bg-light">
+                                    {% if profile.profile_picture %}
+                                        <img src="{{ profile.profile_picture.url }}" class="rounded-circle border border-2 border-white shadow-sm" style="width: 60px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold fs-4 border shadow-sm" style="width: 60px; height: 60px;">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <input type="file" name="profile_picture" class="form-control form-control-sm" accept="image/*">
+                                        <div class="form-text text-muted small mt-1">Allowed formats: JPG, PNG. Max size: 2MB.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">First Name</label>
+                                <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Last Name</label>
+                                <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Phone Number</label>
+                                <input type="tel" name="phone" class="form-control" value="{{ profile.phone|default:'' }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Address</label>
+                                <textarea name="address" class="form-control" rows="2">{{ profile.address|default:'' }}</textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">City</label>
+                                <input type="text" name="city" class="form-control" value="{{ profile.city|default:'' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">State</label>
+                                <input type="text" name="state" class="form-control" value="{{ profile.state|default:'' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Pincode</label>
+                                <input type="text" name="pincode" class="form-control" value="{{ profile.pincode|default:'' }}">
+                            </div>
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-primary px-4 rounded-pill">Save Changes</button>
+                            </div>
+                        </div>
+                    </form>
+                {% endif %}
+
+                <!-- Password Tab -->
+                {% if active_tab == 'password' %}
+                    <h4 class="fw-bold mb-4">Change Password</h4>
+                    <div class="alert alert-info border-0 bg-info-subtle text-info-emphasis">
+                        <i class="bi bi-info-circle me-2"></i>Secure your account with a strong password.
+                    </div>
+                    <form method="POST" action="{% url 'change_password' %}">
+                        {% csrf_token %}
+                        {{ password_form|crispy }}
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill mt-3">Update Password</button>
+                    </form>
+                {% endif %}
+
+                <!-- Payment History Tab -->
+                {% if active_tab == 'payment_history' %}
+                    <h4 class="fw-bold mb-4">Transaction History</h4>
+                    {% if transactions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small text-muted text-uppercase">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Plan/Item</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Receipt</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="border-top-0">
+                                    {% for txn in transactions %}
+                                    <tr>
+                                        <td class="small">{{ txn.created_at|date:"M d, Y" }}<br><span class="text-muted">{{ txn.created_at|date:"h:i A" }}</span></td>
+                                        <td class="fw-medium">
+                                            {% if txn.subscription_plan %}
+                                                {{ txn.subscription_plan.name }}
+                                            {% else %}
+                                                {{ txn.transaction_type|title }}
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold text-dark">₹{{ txn.amount }}</td>
+                                        <td>
+                                            {% if txn.status == 'success' %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Success</span>
+                                            {% elif txn.status == 'pending' %}
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Pending</span>
+                                            {% else %}
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Failed</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="font-monospace small text-muted">#{{ txn.razorpay_order_id|truncatechars:10 }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3 text-muted opacity-25">
+                                <i class="bi bi-receipt-cutoff fs-1"></i>
+                            </div>
+                            <h6 class="text-muted">No transactions found</h6>
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

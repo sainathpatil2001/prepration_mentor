@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Test History - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h2 class="fw-bold mb-0">Test History</h2>
+        <p class="text-muted small">Track your progress and review past performances.</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'test_list' %}" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-plus-lg me-2"></i>New Test
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4 py-3">Test Title</th>
+                        <th>Date & Time</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Time Taken</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts %}
+                    <tr class="transition-hover">
+                        <td class="ps-4 fw-medium text-dark">{{ attempt.test.title }}</td>
+                        <td class="text-muted small">
+                            {{ attempt.started_at|date:"M d, Y" }}<br>
+                            {{ attempt.started_at|date:"h:i A" }}
+                        </td>
+                        <td>
+                            {% if attempt.status == 'completed' %}
+                                {% if attempt.is_passed %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Passed</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Failed</span>
+                                {% endif %}
+                            {% elif attempt.status == 'in_progress' %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">In Progress</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle rounded-pill">Abandoned</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">
+                            {% if attempt.status == 'completed' %}
+                                {{ attempt.percentage|floatformat:1 }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">
+                            {% if attempt.time_taken_minutes %}
+                                {{ attempt.time_taken_minutes }} min
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if attempt.status == 'completed' %}
+                                <a href="{% url 'exam_results' attempt.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    Result
+                                </a>
+                            {% elif attempt.status == 'in_progress' %}
+                                <a href="{% url 'exam_interface' attempt.id %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                    Resume
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="mb-3 text-muted opacity-25">
+                                <i class="bi bi-journal-x fs-1"></i>
+                            </div>
+                            <h5 class="text-muted">No tests taken yet.</h5>
+                            <a href="{% url 'test_list' %}" class="btn btn-link text-decoration-none">Browse available tests</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

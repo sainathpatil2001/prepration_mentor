@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Terms of Service - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="display-4 fw-bold mb-3 text-center">Terms of Service</h1>
+            <p class="lead text-muted text-center mb-5">Last updated: {{ now|date:"F d, Y" }}</p>
+            
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-5">
+                    <div class="prose prose-lg text-gray-700">
+                        <section class="mb-5">
+                            <h2 class="h3 fw-bold mb-3">1. Acceptance of Terms</h2>
+                            <p class="mb-4">
+                                By accessing and using Prepration Mentor ("we," "our," or "us"), you agree to be bound by these Terms of Service. 
+                                If you do not agree to these terms, please do not use our services.
+                            </p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h3 fw-bold mb-3">2. User Accounts</h2>
+                            <p class="mb-3">
+                                To access certain features of the platform, you may be required to create an account. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.
+                            </p>
+                            <p class="mb-4">
+                                You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate, current, and complete.
+                            </p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h3 fw-bold mb-3">3. Intellectual Property</h2>
+                            <p class="mb-4">
+                                The content, improved structure, and look and feel of the Service are our exclusive property. All content provided on Prepration Mentor, including but not limited to questions, text, graphics, logos, and software, is the property of Prepration Mentor or its content suppliers and protected by international copyright laws.
+                            </p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h3 fw-bold mb-3">4. Content Guidelines</h2>
+                            <p class="mb-4">
+                                Users may not upload, post, or transmit any content that is unlawful, harmful, threatening, abusive, harassing, defamatory, vulgar, obscene, libelous, invasive of another's privacy, hateful, or racially, ethnically, or otherwise objectionable.
+                            </p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h3 fw-bold mb-3">5. Termination</h2>
+                            <p class="mb-4">
+                                We may terminate or suspend your account and bar access to the Service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever and without limitation, including but not limited to a breach of the Terms.
+                            </p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h3 fw-bold mb-3">6. Limitation of Liability</h2>
+                            <p class="mb-4">
+                                In no event shall Prepration Mentor, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.
+                            </p>
+                        </section>
+
+                        <section>
+                            <h2 class="h3 fw-bold mb-3">7. Changes to Terms</h2>
+                            <p class="mb-4">
+                                We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will maintain efforts to provide at least 30 days' notice prior to any new terms taking effect.
+                            </p>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="mt-5 p-5 bg-gradient-primary rounded-4 text-white text-center shadow-lg position-relative overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="position-relative z-1">
+                    <h2 class="fw-bold mb-3">Have Questions?</h2>
+                    <p class="lead mb-4 opacity-75">Our support team is available 24/7 to assist you with any queries regarding our terms.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'contact_us' %}" class="btn btn-light rounded-pill px-5 fw-bold text-primary shadow-sm">Contact Support</a>
+                        <a href="{% url 'account_signup' %}" class="btn btn-outline-light rounded-pill px-5 fw-bold">Sign Up Now</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

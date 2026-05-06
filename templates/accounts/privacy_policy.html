@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ policy.title|default:"Privacy Policy" }} - Prepration Mentor{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-5">
+                    {% if policy %}
+                        <h1 class="mb-4">{{ policy.title }}</h1>
+                        <p class="text-muted mb-4">Last Updated: {{ policy.updated_at|date:"F d, Y" }}</p>
+                        
+                        <div class="privacy-content">
+                            {{ policy.content|safe }}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <h2 class="mb-3">Privacy Policy</h2>
+                            <p class="text-muted">Our privacy policy is currently being updated. Please check back later.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

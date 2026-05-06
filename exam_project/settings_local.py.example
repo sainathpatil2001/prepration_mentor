@@ -1,0 +1,28 @@
+# Local settings example
+# Copy this to settings_local.py and configure
+
+# For SQLite (basic features, no Google OAuth):
+# Keep default DATABASES in settings.py
+
+# For PostgreSQL (full features):
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'exam_db',
+        'USER': 'your_user',
+        'PASSWORD': 'your_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+
+# Razorpay Keys
+RAZORPAY_KEY_ID = 'rzp_live_Rb7oRm9361HECE'
+RAZORPAY_KEY_SECRET = '6qVrdhH9VX3umJXjI9Pp2OOb'
+
+# Gmail/Google Workspace Email Settings
+# Get App Password from: https://myaccount.google.com/apppasswords
+EMAIL_HOST_USER = 'yourname@gmail.com'  # Your Gmail address
+EMAIL_HOST_PASSWORD = 'your-app-password-here'  # 16-character App Password
+DEFAULT_FROM_EMAIL = 'yourname@gmail.com'  # Usually same as EMAIL_HOST_USER
+

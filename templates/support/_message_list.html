@@ -1,0 +1,90 @@
+{% if not chat_messages %}
+    <div class="text-center my-5">
+        <div class="text-muted opacity-50 mb-2">
+            <i class="bi bi-chat-square-text fs-1"></i>
+        </div>
+        <p class="text-muted small">No conversation history yet.</p>
+    </div>
+{% endif %}
+
+{% for message in chat_messages %}
+    <!-- Determine if message is 'outgoing' (sent by the viewer) -->
+    <!-- Helper variable logic simulated by if block usage for classes -->
+    <div class="d-flex flex-column 
+        {% if admin_view and message.is_admin_reply or not admin_view and not message.is_admin_reply %}
+            align-items-end
+        {% else %}
+            align-items-start
+        {% endif %} 
+        mb-4 chat-message">
+        
+        <div class="message-content shadow-sm p-3 rounded-3 
+            {% if admin_view and message.is_admin_reply or not admin_view and not message.is_admin_reply %}
+                bg-primary text-white
+            {% else %}
+                bg-body-secondary text-body
+            {% endif %}" 
+             style="max-width: 80%; 
+                    {% if admin_view and message.is_admin_reply or not admin_view and not message.is_admin_reply %}
+                        border-bottom-right-radius: 4px !important;
+                    {% else %}
+                        border-bottom-left-radius: 4px !important;
+                    {% endif %}">
+            
+            {% if message.message %}
+                <p class="mb-0 text-break">{{ message.message|linebreaksbr }}</p>
+            {% endif %}
+            
+            {% if message.attachment %}
+                <div class="{% if message.message %}mt-2 pt-2 border-top{% endif %} 
+                    {% if admin_view and message.is_admin_reply or not admin_view and not message.is_admin_reply %}
+                        border-white border-opacity-25
+                    {% else %}
+                        border-secondary border-opacity-25
+                    {% endif %}">
+                    
+                    <a href="{{ message.attachment.url }}" target="_blank" class="text-decoration-none d-flex align-items-center 
+                        {% if admin_view and message.is_admin_reply or not admin_view and not message.is_admin_reply %}
+                            text-white
+                        {% else %}
+                            text-primary
+                        {% endif %}">
+                        <i class="bi bi-paperclip me-2"></i>
+                        <span class="small">Attachment</span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="d-flex align-items-center mt-1 
+            {% if admin_view and message.is_admin_reply or not admin_view and not message.is_admin_reply %}
+                me-1
+            {% else %}
+                ms-1
+            {% endif %}">
+            
+            <small class="text-muted" style="font-size: 0.75rem;">
+                {% if not admin_view and not message.is_admin_reply %}{% comment %}User viewing User msg{% endcomment %}
+                {% elif not admin_view and message.is_admin_reply %}Support Team &bull; {% comment %}User viewing Admin msg{% endcomment %}
+                {% elif admin_view and not message.is_admin_reply %}{{ message.ticket.user.username }} &bull; {% comment %}Admin viewing User msg{% endcomment %}
+                {% endif %}
+                
+                {{ message.created_at|date:"M d, H:i" }}
+            </small>
+            
+            {% if admin_view and message.is_admin_reply or not admin_view and not message.is_admin_reply %}
+                <i class="bi bi-check2-all text-primary ms-1" style="font-size: 0.8rem;"></i>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
+
+<style>
+    .chat-message {
+        animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>

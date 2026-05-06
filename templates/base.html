@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Prepration Mentor{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-bg: #f8fafc;
+            --primary-text: #1e293b;
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            --navbar-height: 70px;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--primary-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar Styling */
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            height: var(--navbar-height);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand img {
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: #64748b !important;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #764ba2 !important;
+        }
+        
+        .btn-gradient {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+            color: white;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            margin-top: var(--navbar-height);
+        }
+
+        /* Footer */
+        footer {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 3rem 0;
+            margin-top: auto;
+        }
+
+        /* Toast Messages - Bottom Left */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 10px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Navigation -->
+    {% if not hide_navbar %}
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'home' %}">
+                <i class="bi bi-mortarboard-fill text-primary fs-3"></i>
+                <span class="fw-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Prepration Mentor</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'test_list' %}">Tests</a>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'test_history' %}">History</a>
+                        </li>
+                        <li class="nav-item me-2">
+                            <a class="nav-link position-relative" href="{% url 'notification_list' %}">
+                                <i class="bi bi-bell fs-5"></i>
+                                {% if unread_notifications_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                    {{ unread_notifications_count }}
+                                </span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
+                                {% if user.profile.profile_picture %}
+                                    <img src="{{ user.profile.profile_picture.url }}" class="rounded-circle border border-2 border-primary" style="width: 32px; height: 32px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold" style="width: 32px; height: 32px; border: 2px solid #e2e8f0;">
+                                        {{ user.username|make_list|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <span>{{ user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 rounded-3 animate slideIn">
+                                <li><a class="dropdown-item rounded-2" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                                <li><a class="dropdown-item rounded-2" href="{% url 'add_funds' %}"><i class="bi bi-credit-card me-2"></i>Plans</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item rounded-2 text-danger" href="{% url 'custom_logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="btn btn-outline-primary rounded-pill px-4" href="{% url 'custom_login' %}">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Messages/Toasts -->
+    <div class="toast-container" id="toastContainer">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="toast align-items-center {% if message.tags == 'warning' %}text-dark bg-warning{% elif message.tags == 'error' %}text-white bg-danger{% else %}text-white bg-{{ message.tags|default:'primary' }}{% endif %} border-0 show" style="min-width: 300px;" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
+                    {% if message.tags == 'error' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
+                    {% if message.tags == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2"></i>{% endif %}
+                    {{ message }}
+                </div>
+                <button type="button" class="btn-close {% if message.tags != 'warning' %}btn-close-white{% endif %} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toastEl = document.createElement('div');
+            
+            let bgClass = 'bg-primary text-white';
+            let icon = '';
+            
+            if (type === 'error' || type === 'danger') {
+                bgClass = 'bg-danger text-white';
+                icon = '<i class="bi bi-exclamation-triangle-fill me-2"></i>';
+            } else if (type === 'success') {
+                bgClass = 'bg-success text-white';
+                icon = '<i class="bi bi-check-circle-fill me-2"></i>';
+            } else if (type === 'warning') {
+                bgClass = 'bg-warning text-dark';
+                icon = '<i class="bi bi-exclamation-circle-fill me-2"></i>';
+            }
+            
+            toastEl.className = `toast align-items-center ${bgClass} border-0`;
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+            toastEl.style.minWidth = '300px';
+            
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${icon}${message}
+                    </div>
+                    <button type="button" class="btn-close ${type === 'warning' ? '' : 'btn-close-white'} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            container.appendChild(toastEl);
+            const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+            toast.show();
+            
+            // Cleanup after hidden
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.remove();
+            });
+        }
+    </script>
+
+    <!-- Main Content -->
+    <main class="{% block container_class %}container py-5{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto">
+        <div class="container text-center">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-md-start mb-3 mb-md-0">
+                    <p class="mb-0 text-muted">&copy; 2024 Prepration Mentor. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="#" class="text-muted text-decoration-none me-3 hover-primary">Privacy Policy</a>
+                    <a href="#" class="text-muted text-decoration-none hover-primary">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chatbot Widget -->
+    <div id="chatbot-container">
+        <!-- Chat Button -->
+        <button id="chat-toggle-btn" class="chat-btn shadow-lg" aria-label="Open Chat">
+            <i class="bi bi-chat-dots-fill fs-4"></i>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="chat-window shadow-lg">
+            <!-- Header -->
+            <div class="chat-header">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bot-avatar-container">
+                        <span id="bot-emoji" class="bot-emoji">🤖</span>
+                        <span class="status-dot"></span>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold text-white">MentorBot</h6>
+                        <small class="text-white-50" id="bot-status-text">Online</small>
+                    </div>
+                </div>
+                <!-- Restart/Home Action in Header for easy access -->
+                <div class="d-flex align-items-center gap-2">
+                    <button id="chat-refresh-btn" class="btn btn-sm btn-link text-white p-0" title="Restart Chat">
+                        <i class="bi bi-arrow-clockwise fs-5"></i>
+                    </button>
+                    <button id="chat-close-btn" class="btn-close btn-close-white" aria-label="Close Chat"></button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div id="chat-body" class="chat-body">
+                <!-- Messages will appear here -->
+                <div class="chat-message bot-message">
+                    <div class="message-content">
+                        Hi there! 👋 I'm your Preparation Mentor assistant. Please select a topic below so I can help you better!
+                    </div>
+                    <div class="message-time">Just now</div>
+                </div>
+                
+                <!-- Initial Options -->
+                <div class="chat-options" id="initial-options">
+                    <button class="btn-option" onclick="handleOption('login')">Login Issues 🔐</button>
+                    <button class="btn-option" onclick="handleOption('exams')">Exam Help 📚</button>
+                    <button class="btn-option" onclick="handleOption('pricing')">Pricing & Plans 💳</button>
+                    <button class="btn-option" onclick="handleOption('other')">Other Inquiry 💭</button>
+                </div>
+            </div>
+            <!-- Footer Removed for Click-Only Interface -->
+             <div class="chat-footer-note text-center py-2 bg-light border-top" style="font-size: 0.7rem; color: #94a3b8;">
+                Select an option to chat
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Chatbot Styles */
+        #chatbot-container {
+            font-family: 'Inter', sans-serif;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+        }
+
+        .chat-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .chat-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            transform-origin: bottom right;
+            animation: chatOpen 0.3s ease-out forwards;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        @keyframes chatOpen {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .chat-header {
+            background: var(--primary-gradient);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bot-avatar-container {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            font-size: 1.2rem;
+        }
+
+        .status-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 10px;
+            height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 40px; /* Space for scrolling */
+        }
+
+        .chat-message {
+            max-width: 85%;
+            margin-bottom: 5px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+        }
+
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .bot-message .message-content {
+            background: white;
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+
+        .user-message .message-content {
+            background: var(--primary-gradient);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        .message-time {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin-top: 4px;
+            margin-left: 5px;
+        }
+        
+        .user-message .message-time {
+            text-align: right;
+            margin-right: 5px;
+        }
+
+        .chat-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .btn-option {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .btn-option:hover {
+            background: #f8fafc;
+            border-color: #764ba2;
+            color: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(118, 75, 162, 0.1);
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            width: fit-content;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+        
+        // Auto-hide toasts
+        document.querySelectorAll('.toast').forEach(toastEl => {
+            new bootstrap.Toast(toastEl, { delay: 5000 }).show();
+        });
+
+        // --- Chatbot Logic ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatBtn = document.getElementById('chat-toggle-btn');
+            const chatWindow = document.getElementById('chat-window');
+            const closeBtn = document.getElementById('chat-close-btn');
+            const refreshBtn = document.getElementById('chat-refresh-btn');
+            const chatBody = document.getElementById('chat-body');
+            const botEmoji = document.getElementById('bot-emoji');
+            
+            // Emoji States
+            const EMOJIS = {
+                idle: '🤖',
+                happy: '😊',
+                thinking: '🤔',
+                waiting: '👀',
+                sad: '😟',
+                celebrate: '🎉',
+                love: '❤️'
+            };
+
+            // Toggle Chat
+            function toggleChat() {
+                const isHidden = chatWindow.style.display === 'none' || chatWindow.style.display === '';
+                chatWindow.style.display = isHidden ? 'flex' : 'none';
+                
+                if (isHidden) {
+                    // Update emoji when opening
+                    setEmoji('happy');
+                    setTimeout(() => setEmoji('idle'), 2000);
+                    // Save open state
+                    sessionStorage.setItem('chat_open', 'true');
+                } else {
+                    sessionStorage.setItem('chat_open', 'false');
+                }
+            }
+            
+            // Reset Chat
+            function resetChat() {
+                // Clear session storage
+                sessionStorage.removeItem('chat_history');
+                
+                // Keep the first greeting and options if they exist in DOM, or re-create them
+                chatBody.innerHTML = ''; // Full clear
+                
+                // Re-add default welcome
+                addMessage("Hi there! 👋 I'm your Preparation Mentor assistant. Please select a topic below so I can help you better!", 'bot', false, false);
+                
+                // Re-add default options
+                addOptions([
+                    { label: 'Login Issues 🔐', value: 'login' },
+                    { label: 'Exam Help 📚', value: 'exams' },
+                    { label: 'Pricing & Plans 💳', value: 'pricing' },
+                    { label: 'Other Inquiry 💭', value: 'other' }
+                ], false); // Don't save yet, wait for interaction
+                
+                setEmoji('happy');
+            }
+
+            chatBtn.addEventListener('click', toggleChat);
+            closeBtn.addEventListener('click', toggleChat);
+            if(refreshBtn) refreshBtn.addEventListener('click', resetChat);
+
+            /* Helper: Set Emoji */
+            function setEmoji(state) {
+                botEmoji.innerText = EMOJIS[state] || EMOJIS.idle;
+                botEmoji.style.display = 'inline-block';
+                botEmoji.style.animation = 'none';
+                botEmoji.offsetHeight; /* trigger reflow */
+                botEmoji.style.animation = 'bounce 0.5s ease';
+            }
+
+            // Define animation style dynamically
+            const styleSheet = document.createElement("style");
+            styleSheet.innerText = `
+                @keyframes bounce {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.3); }
+                }
+            `;
+            document.head.appendChild(styleSheet);
+
+            /* Helper: Add Message */
+            // isRestoring: true if we are loading from history (don't save again)
+            window.addMessage = function(text, sender, isHtml = false, isRestoring = false) {
+                const div = document.createElement('div');
+                div.className = `chat-message ${sender}-message`;
+                
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                div.innerHTML = `
+                    <div class="message-content">${text}</div>
+                    <div class="message-time">${time}</div>
+                `;
+                
+                chatBody.appendChild(div);
+                scrollToBottom();
+
+                if (!isRestoring) saveChatState();
+            };
+
+            /* Helper: Add Options */
+            window.addOptions = function(options, isRestoring = false) {
+                const div = document.createElement('div');
+                div.className = 'chat-options';
+                
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option';
+                    // Check if opt is object (label/value) or just string logic from history? 
+                    // History saves simplified structure, so we need to be robust.
+                    // For fresh calls, opt is {label, value}.
+                    const label = opt.label;
+                    const value = opt.value;
+                    
+                    btn.innerText = label;
+                    btn.onclick = () => handleOption(value, label);
+                    div.appendChild(btn);
+                });
+                
+                chatBody.appendChild(div);
+                scrollToBottom();
+
+                if (!isRestoring) saveChatState();
+            };
+
+            /* Helper: Show Typing Indicator */
+            let typingElement = null;
+            function showTyping() {
+                setEmoji('thinking');
+                if (typingElement) return; // already typing
+                
+                typingElement = document.createElement('div');
+                typingElement.className = 'chat-message bot-message';
+                typingElement.innerHTML = `
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                chatBody.appendChild(typingElement);
+                scrollToBottom();
+            }
+
+            function hideTyping() {
+                if (typingElement) {
+                    typingElement.remove();
+                    typingElement = null;
+                }
+                setEmoji('idle');
+            }
+
+            function scrollToBottom() {
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+            
+            /* State Management - Robust Implementation */
+            function addToHistory(type, data) {
+                let history = [];
+                try {
+                    const stored = sessionStorage.getItem('chat_history');
+                    if (stored) history = JSON.parse(stored);
+                } catch (e) {
+                    console.error("Chat history parse error", e);
+                    history = [];
+                }
+                
+                history.push({ type, data });
+                // Keep last 10 items for context
+                if (history.length > 10) history = history.slice(-10);
+                
+                sessionStorage.setItem('chat_history', JSON.stringify(history));
+            }
+
+            // Override helpers to use robust addToHistory
+             window.addMessage = function(text, sender, isHtml = false, isRestoring = false) {
+                 // DOM
+                const div = document.createElement('div');
+                div.className = `chat-message ${sender}-message`;
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                div.innerHTML = `
+                    <div class="message-content">${text}</div>
+                    <div class="message-time">${time}</div>
+                `;
+                chatBody.appendChild(div);
+                scrollToBottom();
+                
+                // History
+                if (!isRestoring) addToHistory('message', { text, sender, isHtml });
+            };
+
+            window.addOptions = function(options, isRestoring = false) {
+                // DOM
+                const div = document.createElement('div');
+                div.className = 'chat-options';
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option';
+                    btn.innerText = opt.label;
+                    btn.onclick = () => handleOption(opt.value, opt.label);
+                    div.appendChild(btn);
+                });
+                chatBody.appendChild(div);
+                scrollToBottom();
+
+                // History
+                if (!isRestoring) addToHistory('options', options);
+            };
+
+            function loadChatState() {
+                // Check if chat should be open
+                const isOpen = sessionStorage.getItem('chat_open') === 'true';
+                if (isOpen) {
+                    chatWindow.style.display = 'flex';
+                }
+
+                const storedDivs = sessionStorage.getItem('chat_history');
+                if (storedDivs) {
+                    try {
+                        const parsed = JSON.parse(storedDivs);
+                        
+                        if (parsed.length > 0) {
+                            // Clear default static content ONLY if we have history
+                            chatBody.innerHTML = '';
+                            
+                            // Replay history
+                            parsed.forEach(item => {
+                                if (item.type === 'message') {
+                                    addMessage(item.data.text, item.data.sender, item.data.isHtml, true);
+                                } else if (item.type === 'options') {
+                                    addOptions(item.data, true);
+                                }
+                            });
+                            
+                            // Visual Cleanup: Hide old options (only keep last set visible if it's the very last item)
+                            // Actually, let's hide ALL option containers except the last one in the DOM
+                            const allOptionContainers = chatBody.querySelectorAll('.chat-options');
+                            for (let i = 0; i < allOptionContainers.length; i++) {
+                                // If it's not the last element in chatBody, hide it? 
+                                // Or simpler: hide all except the absolute last element if it is options.
+                                // Logic: if user clicked an option, they moved on. 
+                                // We can assume valid history implies clicks happened.
+                                // BUT we don't know which option was clicked in history.
+                                // So maybe just hide all previous option groups?
+                                
+                                if (i < allOptionContainers.length - 1) {
+                                    allOptionContainers[i].style.display = 'none';
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error loading chat history', e);
+                        // Fallback to default by doing nothing (default HTML is already there)
+                    }
+                }
+            }
+            
+            // Initialization
+            loadChatState();
+
+
+            /* Main Logic Handler */
+            window.handleOption = function(key, label) {
+                // If label is passed, show it as user message
+                if (label) {
+                    addMessage(label, 'user');
+                    const allOptionContainers = chatBody.querySelectorAll('.chat-options');
+                    allOptionContainers.forEach(container => {
+                         container.style.display = 'none';
+                    });
+                }
+
+                showTyping();
+
+                // Simulated delay for "thinking"
+                setTimeout(() => {
+                    hideTyping();
+                    processBotResponse(key);
+                }, 800);
+            };
+
+            function processBotResponse(key) {
+                switch(key) {
+                    // --- Topics ---
+                    case 'login':
+                        setEmoji('sad'); 
+                        addMessage("I'm sorry you're having trouble logging in. Passwords can be tricky! 😟", 'bot');
+                        setTimeout(() => {
+                            setEmoji('waiting');
+                            addMessage("What specific issue are you facing?", 'bot');
+                            addOptions([
+                                { label: 'Forgot Password', value: 'forgot_pw' },
+                                { label: 'Account Locked', value: 'locked' },
+                                { label: 'Back to Menu', value: 'restart' }
+                            ]);
+                        }, 500);
+                        break;
+                    
+                    case 'exams':
+                        setEmoji('celebrate');
+                        addMessage("Exams are where the magic happens! ✨ Let's get you ready.", 'bot');
+                        addMessage("What do you need help with?", 'bot');
+                        addOptions([
+                            { label: 'Browse Tests', value: 'browse_tests' },
+                            { label: 'My Results', value: 'results' },
+                             { label: 'How to Start?', value: 'how_to_start' }
+                        ]);
+                        setEmoji('waiting');
+                        break;
+
+                    case 'pricing':
+                        setEmoji('happy');
+                        addMessage("Investing in yourself is the best investment! 💳", 'bot');
+                        addMessage("We have flexible plans. Selecting 'View Plans' will take you to our pricing page.", 'bot');
+                         addOptions([
+                            { label: 'View Plans', value: 'go_pricing' },
+                            { label: 'Free Trial?', value: 'free_trial' },
+                            { label: 'Back to Menu', value: 'restart' }
+                        ]);
+                        break;
+                        
+                    case 'other':
+                        setEmoji('thinking');
+                         addMessage("I see. If it's something else, our support team is happy to help! 📧", 'bot');
+                         addOptions([
+                            { label: 'Contact Support', value: 'contact' },
+                            { label: 'Back to Menu', value: 'restart' }
+                        ]);
+                        break;
+
+                    // --- Actions ---
+                    case 'forgot_pw':
+                        setEmoji('thinking');
+                        addMessage("No worries! You can reset it easily. 🔑", 'bot');
+                        addMessage("Click the button below to go to the reset page:", 'bot', true);
+                         // Custom HTML for link button
+                        const linkDiv = document.createElement('div');
+                        linkDiv.innerHTML = `<a href="{% url 'account_reset_password' %}" class="btn btn-sm btn-outline-primary mt-2 mb-2 w-100 rounded-pill">Reset Password</a>`;
+                        chatBody.appendChild(linkDiv);
+                        scrollToBottom();
+                        
+                        // Manually Add to history since we did manual DOM append
+                        addToHistory('message', { text: linkDiv.innerHTML, sender: 'bot', isHtml: true });
+
+                        setTimeout(() => {
+                            setEmoji('idle');
+                             addMessage("anything else?", 'bot');
+                             addOptions([
+                                { label: 'No, thanks', value: 'end_chat' },
+                                { label: 'Yes, menu', value: 'restart' }
+                            ]);
+                        }, 1500);
+                        break;
+
+                    case 'locked':
+                        setEmoji('sad');
+                        addMessage("If your account is locked, it usually unlocks automatically after 30 minutes. ⏳", 'bot');
+                        addMessage("If it persists, please contact support.", 'bot');
+                        addOptions([
+                             { label: 'Contact Support', value: 'contact' },
+                             { label: 'Back to Menu', value: 'restart' }
+                        ]);
+                        break;
+                        
+                    case 'browse_tests':
+                        addMessage("Redirecting you to our test catalogue... 📖", 'bot');
+                        setTimeout(() => {
+                             window.location.href = "{% url 'test_list' %}";
+                        }, 1000);
+                        break;
+                        
+                    case 'results':
+                        addMessage("You can view your history in the Dashboard. Taking you there! 🚀", 'bot');
+                        setTimeout(() => {
+                             window.location.href = "{% url 'test_history' %}";
+                        }, 1000);
+                        break;
+
+                    case 'how_to_start':
+                        addMessage("It's easy! 1. Browse Tests. 2. Select a test. 3. Click 'Start Exam'. Good luck! 🍀", 'bot');
+                        addOptions([
+                            { label: 'Browse Now', value: 'browse_tests' },
+                             { label: 'Back to Menu', value: 'restart' }
+                        ]);
+                        break;
+
+                    case 'go_pricing':
+                        window.location.href = "{% url 'add_funds' %}";
+                        break;
+                        
+                    case 'free_trial':
+                         addMessage("We offer a free demo test for all new users! You can find it in the test list.", 'bot');
+                         addOptions([
+                            { label: 'Find Demo Test', value: 'browse_tests' },
+                            { label: 'Back to Menu', value: 'restart' }
+                        ]);
+                        break;
+
+                    case 'contact':
+                         window.location.href = "{% url 'contact_us' %}";
+                         break;
+                         
+                    case 'end_chat':
+                        setEmoji('love');
+                        addMessage("Happy learning! 👋", 'bot');
+                        break;
+
+                    case 'restart':
+                         setEmoji('happy');
+                         addMessage("How else can I assist you?", 'bot');
+                         addOptions([
+                            { label: 'Login Issues', value: 'login' },
+                            { label: 'Exam Help', value: 'exams' },
+                            { label: 'Pricing', value: 'pricing' },
+                             { label: 'Other', value: 'other' }
+                         ]);
+                         break;
+
+                    default:
+                        setEmoji('idle');
+                        addMessage("I'm here if you need me.", 'bot');
+                        addOptions([
+                            { label: 'Back to Menu', value: 'restart' }
+                        ]);
+                }
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

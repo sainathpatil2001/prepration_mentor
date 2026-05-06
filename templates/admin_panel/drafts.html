@@ -1,0 +1,60 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Draft Test Sets{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Draft Test Sets</h2>
+        <p class="text-muted mb-0">Finalize drafts and publish when they are ready.</p>
+    </div>
+    <a href="{% url 'admin_dashboard_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Add Test Set
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        {% if page_obj.object_list %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Last Updated</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in page_obj %}
+                    <tr>
+                        <td>
+                            <strong>{{ test.title }}</strong>
+                            <div class="text-muted small">{{ test.description|truncatewords:15 }}</div>
+                        </td>
+                        <td>{{ test.category.name|default:"—" }}</td>
+                        <td>{{ test.updated_at|date:"Y-m-d H:i" }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'admin_dashboard_edit' test.id %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <form method="post" action="{% url 'admin_dashboard_publish' test.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="redirect_to" value="{% url 'admin_dashboard_drafts' %}">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-upload"></i> Publish
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'admin_panel/pagination.html' with page_obj=page_obj %}
+        {% else %}
+        <p class="text-muted mb-0">No drafts yet. Start a new test set to create one.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

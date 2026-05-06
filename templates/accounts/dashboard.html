@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Prepration Mentor{% endblock %}
+
+{% block container_class %}container-xl py-5{% endblock %}
+
+{% block content %}
+    <div class="row g-4">
+        
+        <!-- 1. Motivation Quote Section -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden position-relative text-white" 
+                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <!-- Decorative background elements -->
+                <div class="position-absolute top-0 end-0 p-4 opacity-25">
+                    <i class="bi bi-quote fs-1 display-1"></i>
+                </div>
+                <div class="card-body p-4 p-md-5 text-center position-relative z-1">
+                    <h5 class="text-uppercase letter-spacing-2 opacity-75 mb-3 small fw-bold">Daily Inspiration</h5>
+                    <figure class="text-center mb-0">
+                        <blockquote class="blockquote mb-4">
+                            <p class="display-6 fw-bold fst-italic">"{{ motivation_quote.quote }}"</p>
+                        </blockquote>
+                        <figcaption class="blockquote-footer text-white opacity-75 fs-5">
+                            <cite title="Source Title">{{ motivation_quote.author }}</cite>
+                        </figcaption>
+                    </figure>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Statistics Section -->
+        <div class="col-12">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-3">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                        <i class="bi bi-file-earmark-text text-primary fs-3"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-muted small mb-1 text-uppercase fw-bold letter-spacing-1">Total Tests</p>
+                                    <h2 class="fw-bold mb-0 text-dark">{{ total_attempts }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-3">
+                                    <div class="bg-success bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                        <i class="bi bi-trophy text-success fs-3"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-muted small mb-1 text-uppercase fw-bold letter-spacing-1">Passed Tests</p>
+                                    <h2 class="fw-bold mb-0 text-success">{{ passed_tests }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-3">
+                                    <div class="bg-warning bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                        <i class="bi bi-graph-up-arrow text-warning fs-3"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-muted small mb-1 text-uppercase fw-bold letter-spacing-1">Avg. Score</p>
+                                    <h2 class="fw-bold mb-0 text-dark">{{ avg_score }}<span class="fs-5 text-muted ms-1">%</span></h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Recent Activity Section (Last 3 Attempts) -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom-0 py-4 px-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">Recent Attempts</h4>
+                        <p class="text-muted small mb-0">Your latest 3 test sessions</p>
+                    </div>
+                    <a href="{% url 'test_history' %}" class="btn btn-light text-primary fw-bold rounded-pill px-4 hover-primary">
+                        View All History <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4 py-3 text-muted text-uppercase small fw-bold">Test Name</th>
+                                    <th class="py-3 text-muted text-uppercase small fw-bold">Date & Time</th>
+                                    <th class="py-3 text-muted text-uppercase small fw-bold">Score</th>
+                                    <th class="py-3 text-muted text-uppercase small fw-bold">Status</th>
+                                    <th class="py-3 pe-4 text-end text-muted text-uppercase small fw-bold">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in recent_attempts %}
+                                <tr>
+                                    <td class="ps-4 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 rounded p-2 me-3 text-primary">
+                                                <i class="bi bi-journal-text"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="fw-bold mb-0 text-dark">{{ attempt.test.title|truncatechars:40 }}</h6>
+                                                <small class="text-muted">{{ attempt.test.category.name|default:"General" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-medium text-dark">{{ attempt.started_at|date:"M d, Y" }}</span>
+                                            <small class="text-muted">{{ attempt.started_at|date:"h:i A" }}</small>
+                                        </div>
+                                    </td>
+                                    <td class="py-3">
+                                        {% if attempt.status == 'completed' %}
+                                            <span class="fw-bold fs-5 {% if attempt.is_passed %}text-success{% else %}text-danger{% endif %}">
+                                                {{ attempt.percentage|floatformat:0 }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3">
+                                        {% if attempt.status == 'completed' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Completed
+                                            </span>
+                                        {% elif attempt.status == 'in_progress' %}
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2">
+                                                <i class="bi bi-hourglass-split me-1"></i> In Progress
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-2">Abandoned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-4 py-3 text-end">
+                                        {% if attempt.status == 'completed' %}
+                                            <a href="{% url 'exam_results' attempt.id %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
+                                                View Result
+                                            </a>
+                                        {% elif attempt.status == 'in_progress' %}
+                                            <a href="{% url 'exam_interface' attempt.id %}" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">
+                                                Resume Test
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <div class="text-muted mb-3">
+                                            <i class="bi bi-clipboard-x fs-1 opacity-50"></i>
+                                            <p class="mt-2 mb-0">No tests taken yet.</p>
+                                        </div>
+                                        <a href="{% url 'test_list' %}" class="btn btn-primary rounded-pill px-4">Start Your First Test</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Active Plan Section (Bottom) -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        <div class="col-md-8 p-4 d-flex flex-column justify-content-center">
+                            <h5 class="fw-bold mb-3 text-dark">Current Subscription Status</h5>
+                            {% if active_subscription %}
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="display-6 fw-bold text-primary me-3">{{ active_subscription.plan.name }}</div>
+                                    <span class="badge bg-success rounded-pill px-3 py-2 fs-6">Active</span>
+                                </div>
+                                <p class="text-muted mb-4 d-flex align-items-center">
+                                    <i class="bi bi-calendar-check me-2 text-primary"></i>
+                                    Valid until: <span class="fw-bold text-dark ms-1">{{ active_subscription.expires_at|date:"F d, Y" }}</span>
+                                </p>
+                                <div>
+                                    <a href="{% url 'add_funds' %}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                                        Manage Subscription
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="display-6 fw-bold text-dark me-3">Free Plan</div>
+                                    <span class="badge bg-secondary rounded-pill px-3 py-2 fs-6">Limited Access</span>
+                                </div>
+                                <p class="text-muted mb-4">You are currently on the free tier. Upgrade to unlock unlimited tests and premium features.</p>
+                                <div>
+                                    <a href="{% url 'add_funds' %}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                                        <i class="bi bi-star-fill me-1"></i> Upgrade to Premium
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 bg-light d-none d-md-flex align-items-center justify-content-center p-4">
+                            {% if active_subscription %}
+                                <i class="bi bi-shield-check text-primary opacity-25" style="font-size: 8rem;"></i>
+                            {% else %}
+                                <i class="bi bi-ui-checks-grid text-muted opacity-25" style="font-size: 8rem;"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<style>
+    .hover-primary:hover {
+        color: var(--bs-primary) !important;
+        background-color: var(--bs-primary-bg-subtle);
+    }
+</style>
+{% endblock %}
