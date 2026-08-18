@@ -41,14 +41,43 @@
     </div>
 </form>
 
-<div class="card shadow-sm border-0">
-    <div class="card-body">
-        {% if page_obj.object_list %}
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th>Title</th>
+<form method="post" action="{% url 'admin_dashboard_bulk_action' %}" id="bulkActionForm">
+    {% csrf_token %}
+    <input type="hidden" name="q" value="{{ query }}">
+    <input type="hidden" name="status" value="{{ status_filter }}">
+    <input type="hidden" name="visibility" value="{{ visibility_filter }}">
+    <input type="hidden" name="select_across_pages" id="selectAcrossPages" value="false">
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if page_obj.object_list %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center">
+                    <select name="action" class="form-select form-select-sm me-2" style="width: auto;" required>
+                        <option value="">Bulk Actions...</option>
+                        <option value="publish">Publish Selected</option>
+                        <option value="draft">Mark as Draft</option>
+                        <option value="hide">Hide Selected</option>
+                        <option value="unhide">Unhide Selected</option>
+                        <option value="delete">Delete Selected</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Are you sure you want to perform this action on the selected tests?');">Apply</button>
+                </div>
+            </div>
+            <div class="alert alert-info py-2 mb-3 d-none" id="selectAllAlert">
+                <span id="selectAllText">All <span id="selectedCountOnPage">{{ page_obj.object_list|length }}</span> tests on this page are selected.</span>
+                {% if page_obj.paginator.count > page_obj.object_list|length %}
+                <a href="#" id="selectAllPagesBtn" class="alert-link ms-2">Select all {{ page_obj.paginator.count }} tests</a>
+                <span id="allSelectedText" class="d-none">All {{ page_obj.paginator.count }} tests are selected. <a href="#" id="clearSelectionBtn" class="alert-link ms-2">Clear selection</a></span>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </th>
+                            <th>Title</th>
                         <th>Category</th>
                         <th>Status</th>
                         <th>Visibility</th>
@@ -59,6 +88,9 @@
                 <tbody>
                     {% for test in page_obj %}
                     <tr>
+                        <td>
+                            <input class="form-check-input test-checkbox" type="checkbox" name="selected_tests" value="{{ test.id }}">
+                        </td>
                         <td>
                             <strong>{{ test.title }}</strong>
                             <div class="text-muted small">{{ test.description|truncatewords:12 }}</div>
@@ -80,8 +112,11 @@
                         </td>
                         <td>{{ test.updated_at|date:"Y-m-d H:i" }}</td>
                         <td class="text-end table-actions">
-                            <a href="{% url 'admin_dashboard_edit' test.id %}" class="btn btn-sm btn-outline-secondary">
+                            <a href="{% url 'admin_dashboard_edit' test.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
                                 <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'admin_dashboard_bulk_upload' test.id %}" class="btn btn-sm btn-outline-info" title="Bulk Upload Questions">
+                                <i class="bi bi-cloud-upload"></i>
                             </a>
                             <form method="post" action="{% url 'admin_dashboard_toggle_visibility' test.id %}" class="d-inline">
                                 {% csrf_token %}
@@ -147,6 +182,120 @@
         <p class="text-muted mb-0">No test sets found. Try adjusting your filters or create a new test set.</p>
         {% endif %}
     </div>
+</div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const testCheckboxes = document.querySelectorAll('.test-checkbox');
+        const selectAllAlert = document.getElementById('selectAllAlert');
+        const selectAllPagesBtn = document.getElementById('selectAllPagesBtn');
+        const allSelectedText = document.getElementById('allSelectedText');
+        const selectAllText = document.getElementById('selectAllText');
+        const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+        const selectAcrossPagesInput = document.getElementById('selectAcrossPages');
+        const totalItemsCount = {{ page_obj.paginator.count|default:0 }};
+        const itemsOnPage = {{ page_obj.object_list|length|default:0 }};
+        
+        function updateAlertVisibility() {
+            if (!selectAllAlert) return;
+            const allChecked = Array.from(testCheckboxes).every(cb => cb.checked);
+            const someChecked = Array.from(testCheckboxes).some(cb => cb.checked);
+            
+            if (allChecked && itemsOnPage > 0 && totalItemsCount > itemsOnPage) {
+                selectAllAlert.classList.remove('d-none');
+            } else {
+                selectAllAlert.classList.add('d-none');
+                resetSelectionAcrossPages();
+            }
+        }
+        
+        function resetSelectionAcrossPages() {
+            selectAcrossPagesInput.value = 'false';
+            if (selectAllPagesBtn) selectAllPagesBtn.classList.remove('d-none');
+            if (selectAllText) selectAllText.classList.remove('d-none');
+            if (allSelectedText) allSelectedText.classList.add('d-none');
+        }
+
+        if(selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                testCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = selectAllCheckbox.checked;
+                });
+                updateAlertVisibility();
+            });
+        }
+        
+        testCheckboxes.forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                if (!this.checked) {
+                    selectAllCheckbox.checked = false;
+                } else {
+                    const allChecked = Array.from(testCheckboxes).every(cb => cb.checked);
+                    selectAllCheckbox.checked = allChecked;
+                }
+                updateAlertVisibility();
+            });
+        });
+        
+        if (selectAllPagesBtn) {
+            selectAllPagesBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectAcrossPagesInput.value = 'true';
+                selectAllPagesBtn.classList.add('d-none');
+                selectAllText.classList.add('d-none');
+                allSelectedText.classList.remove('d-none');
+            });
+        }
+        
+        if (clearSelectionBtn) {
+            clearSelectionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectAllCheckbox.checked = false;
+                testCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = false;
+                });
+                updateAlertVisibility();
+            });
+        }
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (this.id === 'bulkActionForm') {
+                    const actionSelect = document.querySelector('select[name="action"]').value;
+                    if (!actionSelect) return;
+                    
+                    if (actionSelect === 'delete') {
+                        loadingText.textContent = 'Deleting... Please wait.';
+                        loadingOverlay.classList.remove('d-none');
+                    } else {
+                        loadingText.textContent = 'Processing... Please wait.';
+                        loadingOverlay.classList.remove('d-none');
+                    }
+                } else if (this.action && this.action.includes('/delete/')) {
+                    loadingText.textContent = 'Deleting... Please wait.';
+                    loadingOverlay.classList.remove('d-none');
+                    
+                    const modalEl = this.closest('.modal');
+                    if (modalEl && typeof bootstrap !== 'undefined') {
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+<div id="loadingOverlay" class="d-none position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-flex flex-column justify-content-center align-items-center" style="z-index: 9999;">
+    <div class="spinner-border text-light mb-3" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <h4 class="text-light" id="loadingText">Processing... Please wait.</h4>
 </div>
 {% endblock %}
 

@@ -1,0 +1,53 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Bulk Upload Questions{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Bulk Upload Questions</h2>
+        <p class="text-muted mb-0">Upload questions to Test Set: <strong>{{ test.title }}</strong></p>
+    </div>
+    <a href="{% url 'admin_dashboard_manage' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Back to Test Sets
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <div class="alert alert-info border-0 rounded-3 mb-4">
+                    <h5 class="alert-heading fw-bold"><i class="bi bi-info-circle me-2"></i>Instructions</h5>
+                    <p class="mb-2">To bulk upload questions, please follow these steps:</p>
+                    <ol class="mb-0 ps-3">
+                        <li>Download the sample CSV file format.</li>
+                        <li>Fill in your questions without changing the column headers.</li>
+                        <li>Upload the completed CSV file below.</li>
+                    </ol>
+                    <hr class="border-info opacity-25">
+                    <p class="mb-0 small"><i class="bi bi-exclamation-triangle me-1"></i> Make sure the "Correct Option Number" is exactly 1, 2, 3, or 4.</p>
+                </div>
+
+                <div class="text-center mb-4">
+                    <a href="{% url 'admin_dashboard_sample_csv' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-download me-2"></i>Download Sample CSV
+                    </a>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" class="bg-light p-4 rounded-3 border">
+                    {% csrf_token %}
+                    <div class="mb-4 text-center">
+                        <label for="csv_file" class="form-label d-block fw-semibold mb-3">Select CSV File</label>
+                        <input class="form-control form-control-lg w-75 mx-auto" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-success px-5 py-2">
+                            <i class="bi bi-cloud-upload me-2"></i>Upload and Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

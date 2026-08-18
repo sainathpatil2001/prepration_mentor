@@ -1,4 +1,7 @@
 import json
+import csv
+from django.db import transaction
+from django.http import HttpResponse
 
 from functools import wraps
 
@@ -1455,3 +1458,189 @@ def email_marketing_view(request):
     return render(request, 'admin_panel/email_marketing.html', context)
 
 
+import csv
+from django.db import transaction
+from django.http import HttpResponse
+
+@staff_member_required
+def download_sample_csv(request):
+    """View to download a sample CSV for bulk upload."""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="sample_questions.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Question Text', 'Marks', 'Explanation', 'Option 1', 'Option 2', 'Option 3', 'Option 4', 'Correct Option Number (1-4)'])
+    writer.writerow(['What is the capital of France?', '1', 'Paris is the capital of France.', 'London', 'Berlin', 'Paris', 'Madrid', '3'])
+    writer.writerow(['What is 2 + 2?', '2', '2 + 2 equals 4.', '3', '4', '5', '6', '2'])
+    return response
+
+@staff_member_required
+def bulk_upload_questions(request, test_id):
+    """View to bulk upload questions from a CSV file."""
+    test = get_object_or_404(Test, id=test_id)
+    
+    if request.method == 'POST':
+        csv_file = request.FILES.get('csv_file')
+        if not csv_file:
+            messages.error(request, "Please upload a CSV file.")
+            return redirect('admin_dashboard_bulk_upload', test_id=test_id)
+            
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, "Please upload a valid CSV file.")
+            return redirect('admin_dashboard_bulk_upload', test_id=test_id)
+            
+        try:
+            file_data = csv_file.read().decode('utf-8-sig')
+            lines = file_data.split('\n')
+            
+            reader = csv.reader(lines)
+            header = next(reader, None)
+            
+            if not header or len(header) < 8:
+                messages.error(request, "Invalid CSV format. Please ensure it has the required 8 columns.")
+                return redirect('admin_dashboard_bulk_upload', test_id=test_id)
+                
+            questions_added = 0
+            
+            with transaction.atomic():
+                current_order = test.questions.count()
+                
+                for row in reader:
+                    if not row or len(row) == 0 or not any(row):
+                        continue
+                        
+                    if len(row) < 8:
+                        messages.warning(request, f"Skipped a row due to missing columns: {row[:3]}")
+                        continue
+                        
+                    question_text = row[0].strip()
+                    marks_str = row[1].strip()
+                    explanation = row[2].strip()
+                    opt1 = row[3].strip()
+                    opt2 = row[4].strip()
+                    opt3 = row[5].strip()
+                    opt4 = row[6].strip()
+                    correct_opt_str = row[7].strip()
+                    
+                    if not question_text:
+                        continue
+                        
+                    try:
+                        marks = int(marks_str) if marks_str else 1
+                    except ValueError:
+                        marks = 1
+                        
+                    try:
+                        correct_opt = int(correct_opt_str)
+                        if correct_opt < 1 or correct_opt > 4:
+                            correct_opt = 1
+                    except ValueError:
+                        correct_opt = 1
+                        
+                    current_order += 1
+                    
+                    q = Question.objects.create(
+                        test=test,
+                        question_text=question_text,
+                        marks=marks,
+                        explanation=explanation,
+                        order=current_order
+                    )
+                    
+                    options = [opt1, opt2, opt3, opt4]
+                    for i, opt_text in enumerate(options):
+                        is_correct = (i + 1 == correct_opt)
+                        Answer.objects.create(
+                            question=q,
+                            answer_text=opt_text,
+                            is_correct=is_correct,
+                            order=i + 1
+                        )
+                        
+                    questions_added += 1
+            
+            test.total_questions = test.questions.count()
+            test.save(update_fields=['total_questions'])
+            
+            _log_admin_action(request.user, 'update', test, f'Bulk uploaded {questions_added} questions to test "{test.title}".')
+            messages.success(request, f"Successfully uploaded {questions_added} questions to '{test.title}'.")
+            return redirect('admin_dashboard_manage')
+            
+        except UnicodeDecodeError:
+            messages.error(request, "The file could not be decoded. Please make sure it is saved with UTF-8 encoding.")
+            return redirect('admin_dashboard_bulk_upload', test_id=test_id)
+        except Exception as e:
+            messages.error(request, f"An error occurred during upload: {str(e)}")
+            return redirect('admin_dashboard_bulk_upload', test_id=test_id)
+            
+    context = {
+        'active_tab': 'manage',
+        'test': test,
+    }
+    return render(request, 'admin_panel/bulk_upload.html', context)
+
+@staff_member_required
+@require_POST
+def bulk_action_tests(request):
+    """
+    Handles bulk operations on Test Sets.
+    """
+    action = request.POST.get('action')
+    selected_tests = request.POST.getlist('selected_tests')
+    select_across_pages = request.POST.get('select_across_pages') == 'true'
+    
+    if not action:
+        messages.warning(request, "No action selected.")
+        return redirect('admin_dashboard_manage')
+        
+    if select_across_pages:
+        query = request.POST.get('q', '').strip()
+        status_filter = request.POST.get('status', '').strip()
+        visibility_filter = request.POST.get('visibility', '').strip()
+        tests = Test.objects.all()
+        if query:
+            from django.db.models import Q
+            tests = tests.filter(Q(title__icontains=query) | Q(description__icontains=query))
+        if status_filter in {'draft', 'published'}:
+            tests = tests.filter(status=status_filter)
+        if visibility_filter == 'hidden':
+            tests = tests.filter(is_hidden=True)
+        elif visibility_filter == 'visible':
+            tests = tests.filter(is_hidden=False)
+    else:
+        if not selected_tests:
+            messages.warning(request, "No tests selected.")
+            return redirect('admin_dashboard_manage')
+        tests = Test.objects.filter(id__in=selected_tests)
+        
+    count = tests.count()
+    
+    if count == 0:
+        messages.warning(request, "No valid tests found for the selected operation.")
+        return redirect('admin_dashboard_manage')
+
+    if action == 'publish':
+        for test in tests:
+            test.publish(save=True)
+        _log_admin_action(request.user, 'update', None, f'Bulk published {count} test sets.')
+        messages.success(request, f'Successfully published {count} test sets.')
+    elif action == 'draft':
+        for test in tests:
+            test.mark_draft(save=True)
+        _log_admin_action(request.user, 'update', None, f'Bulk marked {count} test sets as draft.')
+        messages.success(request, f'Successfully marked {count} test sets as draft.')
+    elif action == 'hide':
+        tests.update(is_hidden=True)
+        _log_admin_action(request.user, 'update', None, f'Bulk hidden {count} test sets.')
+        messages.success(request, f'Successfully hidden {count} test sets.')
+    elif action == 'unhide':
+        tests.update(is_hidden=False)
+        _log_admin_action(request.user, 'update', None, f'Bulk unhidden {count} test sets.')
+        messages.success(request, f'Successfully unhidden {count} test sets.')
+    elif action == 'delete':
+        tests.delete()
+        _log_admin_action(request.user, 'delete', None, f'Bulk deleted {count} test sets.')
+        messages.success(request, f'Successfully deleted {count} test sets.')
+    else:
+        messages.error(request, "Invalid action selected.")
+
+    return redirect('admin_dashboard_manage')
